@@ -85,14 +85,49 @@
   .leaflet-popup-content { font: 14px/1.4 system-ui, sans-serif; }
   .leaflet-popup-content .chips { display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0; }
   .chip { font-size: 11px; padding: 1px 7px; border-radius: 10px; background: #eee; color: #222; border: 1px solid #ccc; }
+  /* Mobile Kopfleiste (nur auf schmalen Bildschirmen sichtbar) */
+  header.mobil { display: none; }
+  #btnSchliessen { display: none; }
+
   @media (max-width: 760px) {
     body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-    aside { border-right: 0; border-bottom: 1px solid var(--line); max-height: 45vh; }
+    header.mobil {
+      display: flex; align-items: center; gap: 4px; padding: 6px 8px;
+      border-bottom: 1px solid var(--line); background: var(--bg); z-index: 1001;
+    }
+    header.mobil .titel { font-weight: 600; font-size: 15px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    header.mobil button { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 8px; border: 0; background: none; font-size: 10px; color: var(--fg-2); }
+    header.mobil button svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    header.mobil button.aktiv { color: var(--accent); }
+    /* Seitenleiste wird zum Panel über der Karte, nur auf Anforderung */
+    aside {
+      display: none; position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 1000;
+      max-height: 60vh; border-right: 0; border-top: 1px solid var(--line); border-radius: 12px 12px 0 0;
+      box-shadow: 0 -4px 16px rgba(0,0,0,.15); padding-top: 10px;
+    }
+    aside.offen { display: flex; }
+    aside > div:first-child, aside > p.muted:last-child { display: none; }
+    #btnSchliessen { display: block; position: absolute; top: 6px; right: 8px; padding: 2px 9px; }
+    details { border-top: 0; padding-top: 0; }
+    /* Im Zeichenmodus: nur der aktive Abschnitt als schmale Leiste unten, Karte bleibt bedienbar */
+    body.imModus aside { display: flex; max-height: 45vh; }
+    body.imModus aside details:not([open]) { display: none; }
+    body.imModus aside #secListe { display: none; }
   }
 </style>
 </head>
 <body>
+<header class="mobil">
+  <span class="titel">Mobilitätsmängel Merzig</span>
+  <button data-panel="secListe" title="Liste der Meldungen">
+    <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Liste</button>
+  <button data-panel="secFilter" title="Filter">
+    <svg viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4z"/></svg>Filter</button>
+  <button data-panel="secMelden" title="Mangel melden">
+    <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Melden</button>
+</header>
 <aside>
+  <button id="btnSchliessen" title="Schließen">✕</button>
   <div>
     <h1>Mobilitätsmängel Merzig</h1>
     <p class="muted">Gepflegt auf <a id="repoLink" href="#">GitHub</a>.</p>
@@ -337,7 +372,7 @@ function zeichne() {
       });
       layer.bindPopup(popup(issue, art));
       layer.addTo(issueLayer);
-      li.onclick = () => { map.fitBounds(layer.getBounds().pad(0.5), { maxZoom: 18 }); layer.openPopup(); };
+      li.onclick = () => { if (istMobil()) panelSchliessen(); map.fitBounds(layer.getBounds().pad(0.5), { maxZoom: 18 }); layer.openPopup(); };
     } else {
       li.title += geo ? '' : ' · ohne Ort auf der Karte';
       li.onclick = () => window.open(issue.url);
@@ -420,6 +455,26 @@ async function start(force) {
   }
 }
 document.getElementById('btnReload').onclick = e => { e.preventDefault(); e.stopPropagation(); start(true); };
+
+// ---------- Mobile Kopfleiste: Panel über der Karte ----------
+const aside = document.querySelector('aside');
+const istMobil = () => matchMedia('(max-width: 760px)').matches;
+function panelZeigen(id) {
+  document.querySelectorAll('aside details').forEach(d => d.open = d.id === id);
+  aside.classList.add('offen');
+  aside.scrollTop = 0;
+  document.querySelectorAll('header.mobil button').forEach(b => b.classList.toggle('aktiv', b.dataset.panel === id));
+}
+function panelSchliessen() {
+  aside.classList.remove('offen');
+  document.querySelectorAll('header.mobil button').forEach(b => b.classList.remove('aktiv'));
+}
+document.querySelectorAll('header.mobil button').forEach(b => b.onclick = () => {
+  const offen = aside.classList.contains('offen') && document.getElementById(b.dataset.panel).open;
+  offen ? panelSchliessen() : panelZeigen(b.dataset.panel);
+});
+document.getElementById('btnSchliessen').onclick = panelSchliessen;
+map.on('click', () => { if (istMobil() && !modus) panelSchliessen(); });
 start(false);
 
 // ---------- Mangel melden ----------
@@ -452,6 +507,9 @@ document.getElementById('btnCoordsEnde').onclick = endeModus;
 function startModus(m, issue) {
   endeModus();
   modus = m; ergaenzeIssue = issue || null;
+  document.body.classList.add('imModus');
+  panelSchliessen(); // mobil: nur der aktive Abschnitt bleibt als Leiste unten sichtbar
+  if (istMobil()) document.querySelectorAll('aside details').forEach(d => d.open = false);
   const btn = document.querySelector(`button[data-mode=${m === 'add' ? 'coords' : m}]`);
   if (btn) btn.classList.add('active');
   if (m === 'coords' || m === 'add') {
@@ -472,6 +530,7 @@ function startModus(m, issue) {
 
 function endeModus() {
   modus = null; punkte = []; ergaenzeIssue = null;
+  document.body.classList.remove('imModus');
   if (skizze) { map.removeLayer(skizze); skizze = null; }
   document.querySelectorAll('button[data-mode]').forEach(b => b.classList.remove('active'));
   hilfe.textContent = HILFE_LEER.melden;
