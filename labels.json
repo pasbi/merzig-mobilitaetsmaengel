@@ -1,9 +1,8 @@
 [
-  { "name": "art: laterne",                "color": "f0a202", "description": "Laterne oder Mast im Weg" },
+  { "name": "art: hindernis",              "color": "e85d04", "description": "Hindernis / Engstelle, z. B. Mast im Weg" },
   { "name": "art: schild",                 "color": "7b2cbf", "description": "Beschilderung falsch oder fehlend" },
   { "name": "art: belag",                  "color": "8d5524", "description": "Belag / Oberfläche" },
   { "name": "art: fehlende-infrastruktur", "color": "0a5fd6", "description": "Fehlende Infrastruktur" },
-  { "name": "art: hindernis",              "color": "e85d04", "description": "Hindernis / Engstelle" },
   { "name": "art: gefahr",                 "color": "d00000", "description": "Gefährliche Stelle" },
   { "name": "art: sonstiges",              "color": "6c757d", "description": "Sonstiges" },
 
@@ -25,6 +24,8 @@
   { "name": "zuständigkeit: bund",      "color": "d7ccc8", "description": "Bund (z. B. Bundesstraßen, Bahn)" },
   { "name": "zuständigkeit: privat",    "color": "d7ccc8", "description": "Privater Eigentümer oder Betreiber" },
   { "name": "zuständigkeit: unklar",    "color": "d7ccc8", "description": "Noch nicht geklärt" },
+
+  { "name": "thema: einbahnstraße",   "color": "e1bee7", "description": "Einbahnstraße für Radverkehr in Gegenrichtung freigeben" },
 
   { "name": "duplikat",               "color": "cfd8dc", "description": "Bereits gemeldet, siehe verlinktes Issue" }
 ]

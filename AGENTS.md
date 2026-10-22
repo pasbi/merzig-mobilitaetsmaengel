@@ -22,7 +22,8 @@ Das `README.md` richtet sich an Meldende und Mitwirkende; technische Einrichtung
 - Formularfelder werden von GitHub als `### Feldname\n\nWert` gerendert; `docs/index.html` liest sie mit `feld(body, label)`.
   Feldnamen im Formular nicht umbenennen, ohne den Parser anzupassen (er kennt für den Standort den alten Namen „Ort (Adresse oder Beschreibung)“ und den neuen „Standort“).
 - Formularfelder: Art, Schwere, Problem, Lösungsvorschlag (optional), Standort (Adresse, Bereich oder Liste mit einer Zeile je Stelle in der Reihenfolge der Geometrie-Punkte), Geometrie, Lizenz-Checkboxen.
-- Labels: genau eines aus `art: …` (Farbe auf der Karte), `schwere: …` und `status: …`; null bis mehrere aus `zuständigkeit: …` (Stadt, Landkreis, Land, Bund, privat, unklar; geteilte Zuständigkeit ist normal); dazu `duplikat`.
+- Labels: genau eines aus `art: …` (Farbe auf der Karte), `schwere: …` und `status: …`; null bis mehrere aus `zuständigkeit: …` (Stadt, Landkreis, Land, Bund, privat, unklar; geteilte Zuständigkeit ist normal); optional `thema: …` für Bündel mehrerer Issues (die Karte baut daraus automatisch einen Filter, keine Pflege in `ARTEN` nötig); dazu `duplikat`.
+  Bündel zusätzlich als Eltern-Issue mit Sub-Issues strukturieren; dafür gibt es die Vorlage `thema.yml` ohne Geometrie (erscheint auf der Karte nur in der Liste).
   Vollständige Liste und Bedeutung in `labels.json` und `README.md`.
 - Geschlossen wird ein Issue nur mit `status: behoben` oder `status: obsolet`.
   `status: abgelehnt` bleibt offen: der Mangel besteht in der echten Welt weiter.

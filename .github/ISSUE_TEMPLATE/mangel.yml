@@ -15,7 +15,6 @@ body:
     attributes:
       label: Art des Mangels
       options:
-        - Laterne / Mast im Weg
         - Beschilderung falsch oder fehlend
         - Belag / Oberfläche
         - Fehlende Infrastruktur
