@@ -7,7 +7,7 @@ Alle Meldungen erscheinen auf der **[Karte](https://pasbi.github.io/merzig-mobil
 
 ## Mangel melden
 
-1. Auf der [Karte](https://pasbi.github.io/merzig-mobilitaetsmaengel/) „Punkt“, „Linie“ oder „Fläche“ wählen und in die Karte klicken.
+1. Auf der [Karte](https://pasbi.github.io/merzig-mobilitaetsmaengel/) „Punkt(e)“, „Linie“ oder „Fläche“ wählen und in die Karte klicken; bei „Punkt(e)“ fügt jeder weitere Klick eine weitere Stelle zur selben Meldung hinzu.
 2. „Meldung auf GitHub erstellen“ öffnet das Formular mit vorausgefüllter Geometrie und Adresse.
 3. Art, Schwere und Beschreibung ausfüllen, Fotos per Drag & Drop einfügen, absenden.
 

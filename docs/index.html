@@ -85,13 +85,14 @@
   <section>
     <h2>Mangel melden</h2>
     <div class="row" id="meldenButtons">
-      <button data-mode="point">Punkt</button>
+      <button data-mode="point">Punkt(e)</button>
       <button data-mode="line">Linie</button>
       <button data-mode="polygon">Fläche</button>
     </div>
     <p id="meldenHilfe" class="muted" style="margin-top:8px">Wähle Punkt, Linie oder Fläche und klicke in die Karte.</p>
     <div class="row" id="meldenAktionen" style="margin-top:8px; display:none">
       <button class="primary" id="btnErstellen" disabled>Meldung auf GitHub erstellen</button>
+      <button class="btnZurueck" disabled>Letzten Punkt entfernen</button>
       <button id="btnAbbrechen">Abbrechen</button>
     </div>
   </section>
@@ -106,6 +107,7 @@
       <textarea id="coordsText" readonly rows="5" spellcheck="false"></textarea>
       <div class="row" style="margin-top:6px; align-items:center">
         <button class="primary" id="btnKopieren">Kopieren</button>
+        <button class="btnZurueck" disabled>Letzten Punkt entfernen</button>
         <a id="coordsIssueLink" href="#" target="_blank" rel="noopener" style="display:none">Issue bearbeiten ↗</a>
         <button id="btnCoordsEnde">Fertig</button>
       </div>
@@ -333,7 +335,7 @@ const coordsBox = document.getElementById('coordsBox');
 const coordsText = document.getElementById('coordsText');
 const coordsIssueLink = document.getElementById('coordsIssueLink');
 const HILFE = {
-  point: 'Klicke auf die Stelle des Mangels.',
+  point: 'Klicke auf die Stelle des Mangels. Weitere Klicks fügen weitere Stellen zur selben Meldung hinzu.',
   line: 'Klicke die Punkte entlang des Abschnitts, dann „Meldung erstellen“.',
   polygon: 'Klicke die Eckpunkte der Fläche (mindestens 3), dann „Meldung erstellen“.',
   coords: 'Klicke eine oder mehrere Stellen; unten erscheint das GeoJSON zum Kopieren.',
@@ -390,17 +392,25 @@ function ergaenzen(nr) {
 
 map.on('click', e => {
   if (!modus) return;
-  if (modus === 'point') punkte = [e.latlng]; else punkte.push(e.latlng);
-  if (skizze) map.removeLayer(skizze);
-  const marker = ll => L.circleMarker(ll, { radius: 9, color: '#fff', weight: 2, fillColor: '#111', fillOpacity: .9 });
-  if (modus === 'point') skizze = marker(punkte[0]);
-  else if (modus === 'line') skizze = L.polyline(punkte, { color: '#111', weight: 4, dashArray: '4 6' });
-  else if (modus === 'polygon') skizze = L.polygon(punkte, { color: '#111', weight: 3, dashArray: '4 6', fillOpacity: .15 });
-  else skizze = L.featureGroup(punkte.map(marker));
-  skizze.addTo(map);
-  btnErstellen.disabled = !(modus === 'point' || (modus === 'line' && punkte.length >= 2) || (modus === 'polygon' && punkte.length >= 3));
-  if (modus === 'coords' || modus === 'add') aktualisiereCoordsText();
+  punkte.push(e.latlng);
+  zeichneSkizze();
 });
+
+function zeichneSkizze() {
+  if (skizze) { map.removeLayer(skizze); skizze = null; }
+  const marker = ll => L.circleMarker(ll, { radius: 9, color: '#fff', weight: 2, fillColor: '#111', fillOpacity: .9 });
+  if (punkte.length) {
+    if (modus === 'line') skizze = L.polyline(punkte, { color: '#111', weight: 4, dashArray: '4 6' });
+    else if (modus === 'polygon') skizze = L.polygon(punkte, { color: '#111', weight: 3, dashArray: '4 6', fillOpacity: .15 });
+    else skizze = L.featureGroup(punkte.map(marker));
+    skizze.addTo(map);
+  }
+  btnErstellen.disabled = !((modus === 'point' && punkte.length >= 1) || (modus === 'line' && punkte.length >= 2) || (modus === 'polygon' && punkte.length >= 3));
+  document.querySelectorAll('.btnZurueck').forEach(b => b.disabled = !punkte.length);
+  if (modus === 'coords' || modus === 'add') aktualisiereCoordsText();
+}
+
+document.querySelectorAll('.btnZurueck').forEach(b => b.onclick = () => { punkte.pop(); zeichneSkizze(); });
 
 // GitHub rendert im Issue zuverlässig nur FeatureCollections, darum wird immer eine erzeugt;
 // mehrere Punkte als einzelne Point-Features statt MultiPoint.
@@ -460,7 +470,7 @@ async function adresseFuer(latlng) {
 btnErstellen.onclick = async () => {
   btnErstellen.disabled = true; btnErstellen.textContent = 'Öffne GitHub …';
   const geo = aktuelleGeometrie();
-  const mitte = modus === 'point' ? punkte[0] : skizze.getBounds().getCenter();
+  const mitte = punkte.length === 1 ? punkte[0] : skizze.getBounds().getCenter();
   const adresse = await adresseFuer(mitte);
   const p = new URLSearchParams({
     template: CONFIG.template,
