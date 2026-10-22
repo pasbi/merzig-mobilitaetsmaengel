@@ -62,9 +62,15 @@
   </details>
 
   <details id="secCoords">
-    <summary class="leise">Werkzeuge: Koordinaten abgreifen</summary>
+    <summary class="leise">Werkzeuge: Koordinaten, Entfernung</summary>
     <div class="row" style="align-items:center">
       <button data-mode="coords" id="btnCoords">Koordinaten abgreifen</button>
+      <button data-mode="measure" id="btnMessen">Entfernung messen</button>
+    </div>
+    <div id="messBox" class="row" style="display:none; margin-top:8px; align-items:center">
+      <strong id="messErgebnis">0 m</strong>
+      <button class="btnZurueck" disabled>Letzten Punkt entfernen</button>
+      <button id="btnMessEnde">Fertig</button>
     </div>
     <p id="coordsHilfe" class="muted" style="margin-top:8px">Stellen anklicken, GeoJSON kopieren und z. B. im Geometrie-Block einer Meldung einfügen.</p>
     <div id="coordsBox" style="display:none; margin-top:8px">

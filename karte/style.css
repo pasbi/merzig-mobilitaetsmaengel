@@ -30,13 +30,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .leaflet-bar a, :root:not([data-theme="light"]) .leaflet-control-layers,
   :root:not([data-theme="light"]) .leaflet-popup-content-wrapper, :root:not([data-theme="light"]) .leaflet-popup-tip,
-  :root:not([data-theme="light"]) .leaflet-control-attribution { background: var(--bg-2); color: var(--fg); }
+  :root:not([data-theme="light"]) .leaflet-control-attribution, :root:not([data-theme="light"]) .leaflet-tooltip { background: var(--bg-2); color: var(--fg); border-color: var(--line); }
   :root:not([data-theme="light"]) .leaflet-bar a { border-bottom-color: var(--line); }
   :root:not([data-theme="light"]) .leaflet-control-layers-toggle { filter: invert(1); }
 }
 :root[data-theme="dark"] .leaflet-bar a, :root[data-theme="dark"] .leaflet-control-layers,
 :root[data-theme="dark"] .leaflet-popup-content-wrapper, :root[data-theme="dark"] .leaflet-popup-tip,
-:root[data-theme="dark"] .leaflet-control-attribution { background: var(--bg-2); color: var(--fg); }
+:root[data-theme="dark"] .leaflet-control-attribution, :root[data-theme="dark"] .leaflet-tooltip { background: var(--bg-2); color: var(--fg); border-color: var(--line); }
 :root[data-theme="dark"] .leaflet-bar a { border-bottom-color: var(--line); }
 :root[data-theme="dark"] .leaflet-control-layers-toggle { filter: invert(1); }
 * { box-sizing: border-box; }
@@ -132,3 +132,4 @@ header.mobil { display: none; }
   body.imModus aside details:not([open]) { display: none; }
   body.imModus aside #secListe { display: none; }
 }
+.messLabel { font-weight: 600; }

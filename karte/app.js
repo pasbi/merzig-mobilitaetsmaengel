@@ -191,7 +191,7 @@ $('btnSchliessen').onclick = panelSchliessen;
 map.on('click', () => { if (istMobil() && !modus) panelSchliessen(); });
 
 // ---------- Mangel melden ----------
-// Modi: point/line/polygon = neue Meldung; coords = Koordinaten sammeln
+// Modi: point/line/polygon = neue Meldung; coords = Koordinaten sammeln; measure = Entfernung messen
 let modus = null, punkte = [], skizze = null;
 const hilfe = $('meldenHilfe');
 const aktionen = $('meldenAktionen');
@@ -199,21 +199,25 @@ const btnErstellen = $('btnErstellen');
 const coordsHilfe = $('coordsHilfe');
 const coordsBox = $('coordsBox');
 const coordsText = $('coordsText');
+const messBox = $('messBox');
+const messErgebnis = $('messErgebnis');
 const HILFE = {
   point: 'Klicke auf die Stelle des Mangels. Weitere Klicks fügen weitere Stellen zur selben Meldung hinzu.',
   line: 'Klicke die Punkte entlang des Abschnitts, dann „Meldung erstellen“.',
   polygon: 'Klicke die Eckpunkte der Fläche (mindestens 3), dann „Meldung erstellen“.',
   coords: 'Klicke eine oder mehrere Stellen; unten erscheint das GeoJSON zum Kopieren.',
+  measure: 'Klicke die Punkte entlang der Strecke; die Länge erscheint unten und an der Linie.',
 };
 const HILFE_BEARBEITEN = ' Punkt ziehen = verschieben, Klick = entfernen, Zwischenpunkt ziehen = einfügen.';
 const HILFE_LEER = {
   melden: 'Wähle Punkt, Linie oder Fläche und klicke in die Karte.',
-  coords: 'Stellen anklicken, GeoJSON kopieren und z. B. im Geometrie-Block einer Meldung einfügen.',
+  coords: 'Koordinaten als GeoJSON abgreifen (z. B. für den Geometrie-Block einer Meldung) oder Entfernungen entlang einer Strecke messen.',
 };
 
-document.querySelectorAll('#meldenButtons button, #btnCoords').forEach(b => b.onclick = () => startModus(b.dataset.mode));
+document.querySelectorAll('#meldenButtons button, #btnCoords, #btnMessen').forEach(b => b.onclick = () => startModus(b.dataset.mode));
 $('btnAbbrechen').onclick = endeModus;
 $('btnCoordsEnde').onclick = endeModus;
+$('btnMessEnde').onclick = endeModus;
 
 function startModus(m) {
   endeModus();
@@ -223,11 +227,11 @@ function startModus(m) {
   if (istMobil()) document.querySelectorAll('aside details').forEach(d => d.open = false);
   const btn = document.querySelector(`button[data-mode=${m}]`);
   if (btn) btn.classList.add('active');
-  if (m === 'coords') {
+  if (m === 'coords' || m === 'measure') {
     $('secCoords').open = true;
     coordsHilfe.textContent = HILFE[m] + HILFE_BEARBEITEN;
-    coordsBox.style.display = '';
-    aktualisiereCoordsText();
+    if (m === 'coords') { coordsBox.style.display = ''; aktualisiereCoordsText(); }
+    else { messBox.style.display = ''; messErgebnis.textContent = '0 m'; }
   } else {
     $('secMelden').open = true;
     hilfe.textContent = HILFE[m] + HILFE_BEARBEITEN;
@@ -246,6 +250,7 @@ function endeModus() {
   coordsHilfe.textContent = HILFE_LEER.coords;
   aktionen.style.display = 'none';
   coordsBox.style.display = 'none';
+  messBox.style.display = 'none';
   btnErstellen.disabled = true;
   map.getContainer().style.cursor = '';
   map.doubleClickZoom.enable();
@@ -266,7 +271,7 @@ function zeichneSkizze() {
   if (skizze) { map.removeLayer(skizze); skizze = null; }
   skizze = L.featureGroup().addTo(map);
   let form = null;
-  if (modus === 'line' && punkte.length >= 2) form = L.polyline(punkte, { color: '#111', weight: 4, dashArray: '4 6', interactive: false });
+  if ((modus === 'line' || modus === 'measure') && punkte.length >= 2) form = L.polyline(punkte, { color: '#111', weight: 4, dashArray: '4 6', interactive: false });
   if (modus === 'polygon' && punkte.length >= 2) form = L.polygon(punkte, { color: '#111', weight: 3, dashArray: '4 6', fillOpacity: .15, interactive: false });
   if (form) skizze.addLayer(form);
 
@@ -287,7 +292,7 @@ function zeichneSkizze() {
     m.on('click', () => { punkte.splice(i, 1); zeichneSkizze(); });
   });
 
-  if (modus === 'line' || modus === 'polygon') {
+  if (modus === 'line' || modus === 'polygon' || modus === 'measure') {
     const n = punkte.length;
     const segmente = modus === 'polygon' && n >= 3 ? n : n - 1;
     for (let i = 0; i < segmente; i++) {
@@ -303,6 +308,18 @@ function zeichneSkizze() {
   btnErstellen.disabled = !((modus === 'point' && punkte.length >= 1) || (modus === 'line' && punkte.length >= 2) || (modus === 'polygon' && punkte.length >= 3));
   document.querySelectorAll('.btnZurueck').forEach(b => b.disabled = !punkte.length);
   if (modus === 'coords') aktualisiereCoordsText();
+  if (modus === 'measure') {
+    const text = laengeText(punkte);
+    messErgebnis.textContent = text;
+    if (punkte.length >= 2) form.bindTooltip(text, { permanent: true, direction: 'top', className: 'messLabel' }).openTooltip(punkte[punkte.length - 1]);
+  }
+}
+
+// Luftlinie entlang der geklickten Punkte, aufsummiert
+function laengeText(pts) {
+  let m = 0;
+  for (let i = 1; i < pts.length; i++) m += pts[i - 1].distanceTo(pts[i]);
+  return m >= 1000 ? `${(m / 1000).toLocaleString('de-DE', { maximumFractionDigits: 2 })} km` : `${Math.round(m)} m`;
 }
 
 document.querySelectorAll('.btnZurueck').forEach(b => b.onclick = () => { punkte.pop(); zeichneSkizze(); });

@@ -12,6 +12,7 @@ Alle Meldungen erscheinen auf der **[Karte](https://pasbi.github.io/merzig-mobil
 3. Titel anpassen, Art, Schwere, Problem, optional Lösungsvorschlag und Standort ausfüllen, Fotos per Drag & Drop ins Problem-Feld ziehen, absenden.
 
 Gehört eine weitere Stelle zu einer bestehenden Meldung (z. B. dieselben zu engen Fahrradbügel an mehreren Orten), unter „Werkzeuge“ → „Koordinaten abgreifen“ die Stellen anklicken, das GeoJSON kopieren und die `Feature`-Einträge im Issue in die Liste unter „Geometrie“ einfügen (Issue öffnen → ··· → Edit).
+Daneben misst „Entfernung messen“ die Länge einer geklickten Strecke, etwa für Umwege oder Abschnittslängen in der Beschreibung.
 
 Ohne Karte geht es auch direkt über [„Mangel melden“](../../issues/new/choose); die Geometrie dann als GeoJSON-`FeatureCollection` eintragen (erst Länge, dann Breite), z. B.
 `{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[6.6385,49.4435]}}]}`.
