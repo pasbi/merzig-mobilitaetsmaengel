@@ -39,6 +39,7 @@ Weitere Label-Gruppen:
 - `zuständigkeit:` – Stadt, Landkreis, Land, Bund, privat oder unklar; bei geteilter Zuständigkeit mehrere setzen.
 - `thema:` – bündelt mehrere Meldungen zu einem Thema (z. B. `thema: einbahnstraße`); die Karte bietet dafür einen Filter.
   Für die Struktur zusätzlich ein Eltern-Issue mit der allgemeinen Argumentation anlegen und die Einzelmeldungen als Sub-Issues zuordnen (im Eltern-Issue „Add sub-issue → Add existing issue“ oder im Kind-Issue unter „Relationships“).
+- `foto gesucht`, `messung gesucht` – Aufgaben für alle, die vor Ort vorbeikommen; nach dem Hochladen bzw. Eintragen das Label wieder entfernen.
 - `duplikat` – bereits gemeldet, im Kommentar das ursprüngliche Issue verlinken und schließen.
 
 Beim Prüfen einer neuen Meldung bitte `art:` und `schwere:` passend zu den Angaben im Formular setzen und die Zuständigkeit eintragen, sobald sie bekannt ist.

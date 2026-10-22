@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mobilitätsmängel Merzig</title>
 <meta name="description" content="Karte der gemeldeten Mängel an Rad-, Fuß- und Verkehrsinfrastruktur in Merzig.">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
@@ -58,11 +59,23 @@
   #map { height: 100%; }
   #status { font-size: 13px; color: var(--fg-2); }
   #status.err { color: var(--danger); }
-  #liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-  #liste li { padding: 6px 8px; border-radius: 6px; background: var(--bg-2); cursor: pointer; font-size: 13px; }
-  #liste li:hover { outline: 1px solid var(--accent); }
-  #liste li .nr { color: var(--fg-2); }
+  details { border-top: 1px solid var(--line); padding-top: 10px; }
+  summary { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--fg-2); cursor: pointer; list-style: none; display: flex; align-items: center; gap: 6px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: '▸'; font-size: 11px; }
+  details[open] > summary::before { content: '▾'; }
+  details[open] > summary { margin-bottom: 10px; }
+  summary .muted { text-transform: none; letter-spacing: 0; }
+  summary .klein { margin-left: auto; padding: 1px 7px; font-size: 12px; }
+  summary.leise { font-size: 12px; text-transform: none; letter-spacing: 0; }
+  #liste, #liste ul { list-style: none; margin: 0; padding: 0; }
+  #liste ul.kinder { margin-left: 14px; border-left: 1px solid var(--line); }
+  #liste li { display: flex; gap: 6px; align-items: baseline; padding: 4px 8px; margin: 2px 0; border-left: 4px solid transparent; border-radius: 0 4px 4px 0; cursor: pointer; font-size: 13px; line-height: 1.3; }
+  #liste li:hover { background: var(--bg-2); }
+  #liste li .nr { color: var(--fg-2); flex: none; font-variant-numeric: tabular-nums; }
+  #liste li.ohneGeo { border-left-style: dotted; }
   #liste li.closed { opacity: .6; text-decoration: line-through; }
+  #liste li.nurKontext { opacity: .5; }
   #meldenHilfe { font-size: 13px; }
   textarea { width: 100%; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg-2); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 6px; resize: vertical; }
   .leaflet-popup-content button { font-size: 12px; padding: 3px 8px; margin-top: 4px; }
@@ -82,11 +95,11 @@
 <aside>
   <div>
     <h1>Mobilitätsmängel Merzig</h1>
-    <p class="muted">Lampen im Radweg, falsche Schilder, fehlende Infrastruktur. Gepflegt auf <a id="repoLink" href="#">GitHub</a>.</p>
+    <p class="muted">Gepflegt auf <a id="repoLink" href="#">GitHub</a>.</p>
   </div>
 
-  <section>
-    <h2>Mangel melden</h2>
+  <details id="secMelden">
+    <summary>Mangel melden</summary>
     <div class="row" id="meldenButtons">
       <button data-mode="point">Punkt(e)</button>
       <button data-mode="line">Linie</button>
@@ -98,27 +111,10 @@
       <button class="btnZurueck" disabled>Letzten Punkt entfernen</button>
       <button id="btnAbbrechen">Abbrechen</button>
     </div>
-  </section>
+  </details>
 
-  <section>
-    <h2>Koordinaten / Punkte ergänzen</h2>
-    <div class="row">
-      <button data-mode="coords" id="btnCoords">Koordinaten abgreifen</button>
-    </div>
-    <p id="coordsHilfe" class="muted" style="margin-top:8px">Klicke Stellen in der Karte und kopiere das GeoJSON, z. B. um eine bestehende Meldung zu erweitern (im Popup „Punkte ergänzen“).</p>
-    <div id="coordsBox" style="display:none; margin-top:8px">
-      <textarea id="coordsText" readonly rows="5" spellcheck="false"></textarea>
-      <div class="row" style="margin-top:6px; align-items:center">
-        <button class="primary" id="btnKopieren">Kopieren</button>
-        <button class="btnZurueck" disabled>Letzten Punkt entfernen</button>
-        <a id="coordsIssueLink" href="#" target="_blank" rel="noopener" style="display:none">Issue bearbeiten ↗</a>
-        <button id="btnCoordsEnde">Fertig</button>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <h2>Filter</h2>
+  <details id="secFilter">
+    <summary>Filter <span id="filterHinweis" class="muted"></span></summary>
     <div id="artFilter"></div>
     <select id="themaFilter" style="display:none; margin-top:8px; width:100%; font:inherit; padding:5px; border-radius:6px; border:1px solid var(--line); background:var(--bg-2); color:var(--fg)">
       <option value="">Alle Themen</option>
@@ -128,16 +124,31 @@
       <label class="chk"><input type="radio" name="st" value="closed"> erledigt</label>
       <label class="chk"><input type="radio" name="st" value="all"> alle</label>
     </div>
-  </section>
+  </details>
 
-  <section>
-    <div class="row" style="justify-content:space-between; align-items:center">
-      <h2 style="margin:0">Meldungen <span id="anzahl" class="muted"></span></h2>
-      <button id="btnReload" title="Neu laden">↻</button>
-    </div>
-    <p id="status">Lade …</p>
+  <details id="secListe" open>
+    <summary>Meldungen <span id="anzahl" class="muted"></span><button id="btnReload" class="klein" title="Neu laden">↻</button></summary>
+    <p id="status"></p>
     <ul id="liste"></ul>
-  </section>
+  </details>
+
+  <details id="secCoords">
+    <summary class="leise">Werkzeuge: Koordinaten, Punkte ergänzen</summary>
+    <div class="row">
+      <button data-mode="coords" id="btnCoords">Koordinaten abgreifen</button>
+    </div>
+    <p id="coordsHilfe" class="muted" style="margin-top:8px">Bestehende Meldung erweitern: im Popup der Meldung „Punkte ergänzen“ wählen. Hier nur rohe Koordinaten abgreifen.</p>
+    <div id="coordsBox" style="display:none; margin-top:8px">
+      <textarea id="coordsText" readonly rows="5" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:6px; align-items:center">
+        <button class="primary" id="btnKopieren">Kopieren</button>
+        <button class="btnZurueck" disabled>Letzten Punkt entfernen</button>
+        <a id="coordsIssueLink" href="#" target="_blank" rel="noopener" style="display:none">Issue bearbeiten ↗</a>
+        <button id="btnCoordsEnde">Fertig</button>
+      </div>
+    </div>
+  </details>
+
 
   <p class="muted">Daten: <a href="https://creativecommons.org/licenses/by/4.0/deed.de">CC BY 4.0</a> · Karte: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></p>
 </aside>
@@ -176,11 +187,12 @@ document.getElementById('repoLink').href = `https://github.com/${CONFIG.owner}/$
 
 // ---------- Issues laden ----------
 let issues = [];
+let ladeWarnung = '';
 
 // Lädt alle Issues. Seite 1 wird mit dem gespeicherten ETag angefragt: antwortet GitHub mit 304,
 // hat sich nichts geändert, der Cache wird genutzt und die Anfrage zählt nicht gegen das API-Limit.
 async function ladeIssues(force) {
-  const key = `issues:${CONFIG.owner}/${CONFIG.repo}`;
+  const key = `issues:v2:${CONFIG.owner}/${CONFIG.repo}`; // v2: mit kinder/eltern
   let cache = null;
   try { cache = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) {}
   const url = page => `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/issues?state=all&per_page=100&page=${page}`;
@@ -207,7 +219,22 @@ async function ladeIssues(force) {
     number: i.number, title: i.title, state: i.state, url: i.html_url,
     labels: i.labels.map(l => l.name), body: i.body || '',
     updated: i.updated_at,
+    kinder: [], eltern: null,
+    _subTotal: (i.sub_issues_summary && i.sub_issues_summary.total) || 0,
   }));
+  // Sub-Issues: je Eltern-Issue eine Anfrage (nur bei Issues mit Sub-Issues, meist wenige)
+  const byNr = Object.fromEntries(data.map(i => [i.number, i]));
+  ladeWarnung = '';
+  for (const p of data.filter(i => i._subTotal > 0)) {
+    try {
+      const r = await fetch(`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/issues/${p.number}/sub_issues?per_page=100`, { headers: { Accept: 'application/vnd.github+json' } });
+      if (!r.ok) { ladeWarnung = `Sub-Issues von #${p.number} nicht ladbar (${r.status}).`; continue; }
+      for (const s of await r.json()) {
+        if (byNr[s.number]) { p.kinder.push(s.number); byNr[s.number].eltern = p.number; }
+      }
+    } catch (e) { ladeWarnung = `Sub-Issues von #${p.number} nicht ladbar (${e.message}).`; }
+  }
+  data.forEach(i => delete i._subTotal);
   try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), etag, data })); } catch (e) {}
   return data;
 }
@@ -262,36 +289,65 @@ function zeichne() {
   const arten = aktiveArten();
   const st = statusFilter();
   const thema = document.getElementById('themaFilter').value;
-  let n = 0, ohneGeo = 0;
+  const byNr = Object.fromEntries(issues.map(i => [i.number, i]));
+  let n = 0;
 
-  for (const issue of issues) {
-    if (st !== 'all' && issue.state !== st) continue;
-    if (thema && !issue.labels.includes(thema)) continue;
+  const passt = issue =>
+    (st === 'all' || issue.state === st) &&
+    (!thema || issue.labels.includes(thema)) &&
+    arten.includes(artVon(issue));
+
+  // Ein Eintrag wird gezeigt, wenn er selbst passt oder eines seiner Sub-Issues
+  const sichtbar = issue => passt(issue) || issue.kinder.some(k => byNr[k] && sichtbar(byNr[k]));
+
+  function eintrag(issue, container) {
     const art = artVon(issue);
-    if (!arten.includes(art)) continue;
-    n++;
     const farbe = issue.state === 'closed' ? GESCHLOSSEN_FARBE : ARTEN[art].farbe;
     const geo = geometrie(issue.body);
+    const selbst = passt(issue);
+    if (selbst) n++;
 
     const li = document.createElement('li');
-    li.className = issue.state;
-    li.innerHTML = `<span class="nr">#${issue.number}</span> ${esc(issue.title)}`;
-    liste.appendChild(li);
+    li.className = issue.state + (geo ? '' : ' ohneGeo') + (selbst ? '' : ' nurKontext');
+    li.style.borderLeftColor = farbe;
+    li.title = `${ARTEN[art].name} · ${issue.state === 'open' ? 'offen' : 'erledigt'} · Status: ${statusVon(issue)}`;
+    li.innerHTML = `<span class="nr" title="Issue-Nummer auf GitHub">#${issue.number}</span><span>${esc(issue.title)}</span>`;
+    container.appendChild(li);
 
-    if (!geo) { ohneGeo++; li.title = 'Keine Geometrie im Issue'; li.onclick = () => window.open(issue.url); continue; }
+    if (geo && selbst) {
+      const layer = L.geoJSON(geo, {
+        style: () => ({ color: farbe, weight: 4, opacity: .9, fillOpacity: .25, dashArray: issue.state === 'closed' ? '6 6' : null }),
+        pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius: 9, color: '#fff', weight: 2, fillColor: farbe, fillOpacity: .95 }),
+      });
+      layer.bindPopup(popup(issue, art));
+      layer.addTo(issueLayer);
+      li.onclick = () => { map.fitBounds(layer.getBounds().pad(0.5), { maxZoom: 18 }); layer.openPopup(); };
+    } else {
+      li.title += geo ? '' : ' · ohne Ort auf der Karte';
+      li.onclick = () => window.open(issue.url);
+    }
 
-    const layer = L.geoJSON(geo, {
-      style: () => ({ color: farbe, weight: 4, opacity: .9, fillOpacity: .25, dashArray: issue.state === 'closed' ? '6 6' : null }),
-      pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius: 9, color: '#fff', weight: 2, fillColor: farbe, fillOpacity: .95 }),
-    });
-    layer.bindPopup(popup(issue, art));
-    layer.addTo(issueLayer);
-    li.onclick = () => { map.fitBounds(layer.getBounds().pad(0.5), { maxZoom: 18 }); layer.openPopup(); };
+    const kinder = issue.kinder.map(k => byNr[k]).filter(k => k && sichtbar(k));
+    if (kinder.length) {
+      const ul = document.createElement('ul');
+      ul.className = 'kinder';
+      container.appendChild(ul);
+      kinder.forEach(k => eintrag(k, ul));
+    }
   }
-  document.getElementById('anzahl').textContent = `(${n})`;
+
+  // Wurzeln: ohne Eltern-Issue (oder Eltern nicht im Repo), nach Nummer absteigend wie bei GitHub
+  issues.filter(i => !(i.eltern && byNr[i.eltern]) && sichtbar(i)).forEach(i => eintrag(i, liste));
+
+  document.getElementById('anzahl').textContent = `(${n}${n < issues.length ? ` von ${issues.length}` : ''})`;
   const s = document.getElementById('status');
-  s.className = '';
-  s.textContent = ohneGeo ? `${ohneGeo} Meldung(en) ohne Geometrie, nur in der Liste.` : '';
+  s.className = ladeWarnung ? 'err' : ''; s.textContent = ladeWarnung;
+  // Zusammenfassung im zugeklappten Filter-Abschnitt
+  const aktiv = [];
+  if (st !== 'open') aktiv.push(st === 'all' ? 'alle' : 'erledigt');
+  if (arten.length < Object.keys(ARTEN).length) aktiv.push(`${arten.length} Arten`);
+  if (thema) aktiv.push(thema.slice(6).trim());
+  document.getElementById('filterHinweis').textContent = aktiv.length ? `· ${aktiv.join(', ')}` : '';
 }
 
 function popup(issue, art) {
@@ -335,6 +391,7 @@ async function start(force) {
   s.className = ''; s.textContent = 'Lade …';
   try {
     issues = await ladeIssues(force);
+    issues.forEach(i => { i.kinder = i.kinder || []; i.eltern = i.eltern || null; });
     baueThemaFilter();
     zeichne();
     if (issueLayer.getLayers().length && !location.hash) map.fitBounds(issueLayer.getBounds().pad(0.2), { maxZoom: 16 });
@@ -343,7 +400,7 @@ async function start(force) {
     s.textContent = `Konnte Meldungen nicht laden (${e.message}). Bei "403" ist das API-Limit erreicht, bitte später nochmal.`;
   }
 }
-document.getElementById('btnReload').onclick = () => start(true);
+document.getElementById('btnReload').onclick = e => { e.preventDefault(); e.stopPropagation(); start(true); };
 start(false);
 
 // ---------- Mangel melden ----------
@@ -363,10 +420,10 @@ const HILFE = {
   coords: 'Klicke eine oder mehrere Stellen; unten erscheint das GeoJSON zum Kopieren.',
   add: 'Klicke die neuen Stellen. Unten steht die Geometrie des Issues inklusive der neuen Punkte: kopieren, dann im Issue den Block unter „Geometrie“ ersetzen (Issue öffnen → ··· → Edit).',
 };
-const HILFE_BEARBEITEN = ' Punkte lassen sich ziehen, ein Klick auf einen Punkt entfernt ihn, Ziehen eines Zwischenpunkts fügt einen neuen ein.';
+const HILFE_BEARBEITEN = ' Punkt ziehen = verschieben, Klick = entfernen, Zwischenpunkt ziehen = einfügen.';
 const HILFE_LEER = {
   melden: 'Wähle Punkt, Linie oder Fläche und klicke in die Karte.',
-  coords: 'Klicke Stellen in der Karte und kopiere das GeoJSON, z. B. um eine bestehende Meldung zu erweitern (im Popup „Punkte ergänzen“).',
+  coords: 'Bestehende Meldung erweitern: im Popup der Meldung „Punkte ergänzen“ wählen. Hier nur rohe Koordinaten abgreifen.',
 };
 
 document.querySelectorAll('#meldenButtons button, #btnCoords').forEach(b => b.onclick = () => startModus(b.dataset.mode));
@@ -379,12 +436,14 @@ function startModus(m, issue) {
   const btn = document.querySelector(`button[data-mode=${m === 'add' ? 'coords' : m}]`);
   if (btn) btn.classList.add('active');
   if (m === 'coords' || m === 'add') {
+    document.getElementById('secCoords').open = true;
     coordsHilfe.textContent = (ergaenzeIssue ? `Issue #${ergaenzeIssue.number}: ` : '') + HILFE[m] + HILFE_BEARBEITEN;
     coordsBox.style.display = '';
     coordsIssueLink.style.display = ergaenzeIssue ? '' : 'none';
     if (ergaenzeIssue) coordsIssueLink.href = ergaenzeIssue.url;
     aktualisiereCoordsText();
   } else {
+    document.getElementById('secMelden').open = true;
     hilfe.textContent = HILFE[m] + HILFE_BEARBEITEN;
     aktionen.style.display = '';
   }

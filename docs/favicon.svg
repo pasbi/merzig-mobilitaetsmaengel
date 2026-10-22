@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Kartennadel mit Ausrufezeichen: ein Mangel auf der Karte -->
+  <path d="M32 3C19.3 3 9 13.3 9 26c0 16.5 23 35 23 35s23-18.5 23-35C55 13.3 44.7 3 32 3z" fill="#0a5fd6"/>
+  <path d="M32 3C19.3 3 9 13.3 9 26c0 16.5 23 35 23 35s23-18.5 23-35C55 13.3 44.7 3 32 3z" fill="none" stroke="#063a85" stroke-width="2"/>
+  <rect x="28" y="13" width="8" height="18" rx="3" fill="#fff"/>
+  <circle cx="32" cy="39" r="4.5" fill="#fff"/>
+</svg>

@@ -28,5 +28,7 @@
 
   { "name": "thema: einbahnstraße", "color": "e1bee7", "description": "Einbahnstraße für Radverkehr in Gegenrichtung freigeben" },
 
-  { "name": "duplikat", "color": "cfd8dc", "description": "Bereits gemeldet, siehe verlinktes Issue" }
+  { "name": "foto gesucht",    "color": "fff59d", "description": "Ein Foto vor Ort würde die Meldung stärken; nach dem Hochladen Label entfernen" },
+  { "name": "messung gesucht", "color": "fff59d", "description": "Maß vor Ort nötig (Breite, Abstand); nach dem Eintragen Label entfernen" },
+  { "name": "duplikat",        "color": "cfd8dc", "description": "Bereits gemeldet, siehe verlinktes Issue" }
 ]
