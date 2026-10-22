@@ -143,7 +143,6 @@ const CONFIG = {
   template: 'mangel.yml',
   center: [49.4435, 6.6385],   // Merzig, Stadtmitte
   zoom: 14,
-  cacheMinutes: 10,
 };
 
 // Arten: Label-Suffix -> Anzeige + Farbe. Die Dropdown-Texte aus dem Issue-Formular dienen als Fallback,
@@ -170,29 +169,38 @@ document.getElementById('repoLink').href = `https://github.com/${CONFIG.owner}/$
 // ---------- Issues laden ----------
 let issues = [];
 
+// Lädt alle Issues. Seite 1 wird mit dem gespeicherten ETag angefragt: antwortet GitHub mit 304,
+// hat sich nichts geändert, der Cache wird genutzt und die Anfrage zählt nicht gegen das API-Limit.
 async function ladeIssues(force) {
   const key = `issues:${CONFIG.owner}/${CONFIG.repo}`;
-  if (!force) {
-    try {
-      const c = JSON.parse(localStorage.getItem(key) || 'null');
-      if (c && Date.now() - c.t < CONFIG.cacheMinutes * 60000) return c.data;
-    } catch (e) {}
+  let cache = null;
+  try { cache = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) {}
+  const url = page => `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/issues?state=all&per_page=100&page=${page}`;
+  const headers = { Accept: 'application/vnd.github+json' };
+  if (cache && cache.etag && !force) headers['If-None-Match'] = cache.etag;
+
+  const r1 = await fetch(url(1), { headers });
+  if (r1.status === 304 && cache) return cache.data;
+  if (!r1.ok) {
+    if (cache) return cache.data; // z. B. Limit erreicht: lieber alte Daten als keine
+    throw new Error(`GitHub-API: ${r1.status} ${r1.statusText}`);
   }
+  const etag = r1.headers.get('ETag');
   const all = [];
-  for (let page = 1; page <= 20; page++) {
-    const url = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/issues?state=all&per_page=100&page=${page}`;
-    const r = await fetch(url, { headers: { Accept: 'application/vnd.github+json' } });
-    if (!r.ok) throw new Error(`GitHub-API: ${r.status} ${r.statusText}`);
-    const batch = await r.json();
-    all.push(...batch.filter(i => !i.pull_request));
-    if (batch.length < 100) break;
+  let batch = await r1.json();
+  all.push(...batch);
+  for (let page = 2; batch.length === 100 && page <= 20; page++) {
+    const r = await fetch(url(page), { headers: { Accept: 'application/vnd.github+json' } });
+    if (!r.ok) break;
+    batch = await r.json();
+    all.push(...batch);
   }
-  const data = all.map(i => ({
+  const data = all.filter(i => !i.pull_request).map(i => ({
     number: i.number, title: i.title, state: i.state, url: i.html_url,
     labels: i.labels.map(l => l.name), body: i.body || '',
     updated: i.updated_at,
   }));
-  try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), data })); } catch (e) {}
+  try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), etag, data })); } catch (e) {}
   return data;
 }
 
