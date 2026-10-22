@@ -14,6 +14,7 @@ L.control.layers(KARTEN, null, { position: 'topright' }).addTo(map);
 map.on('baselayerchange', e => { try { localStorage.setItem('kartenstil', e.name); } catch (err) {} });
 
 const issueLayer = L.featureGroup().addTo(map);
+map.createPane('kontur').style.zIndex = 399; // unter allen Issue-Linien, damit Konturen nie fremde Linien überdecken
 $('repoLink').href = `https://github.com/${CONFIG.owner}/${CONFIG.repo}`;
 
 // ---------- Zustand ----------
@@ -60,11 +61,18 @@ function zeichne() {
     container.appendChild(li);
 
     if (geo && selbst) {
+      // Weiße Kontur unter Linien und Flächenrändern, damit sie sich von jedem Kartenstil abheben
+      const kontur = L.geoJSON(geo, {
+        filter: f => !/Point/.test(f.geometry.type),
+        style: () => ({ color: '#fff', weight: 10, opacity: .85, fill: false }),
+        interactive: false, pane: 'kontur',
+      });
       const layer = L.geoJSON(geo, {
-        style: () => ({ color: farbe, weight: 4, opacity: .9, fillOpacity: .25, dashArray: issue.state === 'closed' ? '6 6' : null }),
+        style: () => ({ color: farbe, weight: 5, opacity: 1, fillOpacity: .25, dashArray: issue.state === 'closed' ? '8 8' : null }),
         pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius: 9, color: '#fff', weight: 2, fillColor: farbe, fillOpacity: .95 }),
       });
       layer.bindPopup(popup(issue, artName));
+      kontur.addTo(issueLayer);
       layer.addTo(issueLayer);
       li.onclick = () => { if (istMobil()) panelSchliessen(); map.fitBounds(layer.getBounds().pad(0.5), { maxZoom: 18 }); layer.openPopup(); };
     } else if (!geo) {
