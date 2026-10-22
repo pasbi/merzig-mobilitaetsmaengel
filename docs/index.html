@@ -432,9 +432,19 @@ function zeichneSkizze() {
   if (modus === 'polygon' && punkte.length >= 2) form = L.polygon(punkte, { color: '#111', weight: 3, dashArray: '4 6', fillOpacity: .15, interactive: false });
   if (form) skizze.addLayer(form);
 
+  const mitten = []; // Zwischenpunkt-Marker, Index i = Segment punkte[i] -> punkte[i+1]
+  const mitteVon = i => {
+    const a = punkte[i], b = punkte[(i + 1) % punkte.length];
+    return L.latLng((a.lat + b.lat) / 2, (a.lng + b.lng) / 2);
+  };
+
   punkte.forEach((ll, i) => {
     const m = L.marker(ll, { icon: ICON_ECKE, draggable: true, title: 'Ziehen: verschieben · Klick: entfernen' }).addTo(skizze);
-    m.on('drag', () => { punkte[i] = m.getLatLng(); if (form) form.setLatLngs(punkte); });
+    m.on('drag', () => {
+      punkte[i] = m.getLatLng();
+      if (form) form.setLatLngs(punkte);
+      mitten.forEach((mm, j) => mm.setLatLng(mitteVon(j)));
+    });
     m.on('dragend', zeichneSkizze);
     m.on('click', () => { punkte.splice(i, 1); zeichneSkizze(); });
   });
@@ -443,9 +453,8 @@ function zeichneSkizze() {
     const n = punkte.length;
     const segmente = modus === 'polygon' && n >= 3 ? n : n - 1;
     for (let i = 0; i < segmente; i++) {
-      const a = punkte[i], b = punkte[(i + 1) % n];
-      const mitte = L.latLng((a.lat + b.lat) / 2, (a.lng + b.lng) / 2);
-      const m = L.marker(mitte, { icon: ICON_MITTE, draggable: true, title: 'Ziehen: Punkt einfügen' }).addTo(skizze);
+      const m = L.marker(mitteVon(i), { icon: ICON_MITTE, draggable: true, title: 'Ziehen: Punkt einfügen' }).addTo(skizze);
+      mitten.push(m);
       let idx = -1;
       m.on('dragstart', () => { idx = i + 1; punkte.splice(idx, 0, m.getLatLng()); });
       m.on('drag', () => { punkte[idx] = m.getLatLng(); if (form) form.setLatLngs(punkte); });
