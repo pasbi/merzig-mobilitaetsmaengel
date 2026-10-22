@@ -66,6 +66,9 @@
   #meldenHilfe { font-size: 13px; }
   textarea { width: 100%; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg-2); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 6px; resize: vertical; }
   .leaflet-popup-content button { font-size: 12px; padding: 3px 8px; margin-top: 4px; }
+  .vtx { background: #111; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px #111; cursor: grab; }
+  .vtx.mid { background: #fff; border-color: #111; opacity: .6; }
+  .vtx.mid:hover { opacity: 1; }
   .leaflet-popup-content { font: 14px/1.4 system-ui, sans-serif; }
   .leaflet-popup-content .chips { display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0; }
   .chip { font-size: 11px; padding: 1px 7px; border-radius: 10px; background: #eee; color: #222; border: 1px solid #ccc; }
@@ -117,6 +120,9 @@
   <section>
     <h2>Filter</h2>
     <div id="artFilter"></div>
+    <select id="themaFilter" style="display:none; margin-top:8px; width:100%; font:inherit; padding:5px; border-radius:6px; border:1px solid var(--line); background:var(--bg-2); color:var(--fg)">
+      <option value="">Alle Themen</option>
+    </select>
     <div class="row" style="margin-top:8px">
       <label class="chk"><input type="radio" name="st" value="open" checked> offen</label>
       <label class="chk"><input type="radio" name="st" value="closed"> erledigt</label>
@@ -150,11 +156,10 @@ const CONFIG = {
 // Arten: Label-Suffix -> Anzeige + Farbe. Die Dropdown-Texte aus dem Issue-Formular dienen als Fallback,
 // solange ein Issue noch kein "art:"-Label hat.
 const ARTEN = {
-  'laterne':                { name: 'Laterne / Mast',          farbe: '#f0a202', form: 'Laterne / Mast im Weg' },
+  'hindernis':              { name: 'Hindernis / Engstelle',   farbe: '#e85d04', form: 'Hindernis / Engstelle' },
   'schild':                 { name: 'Beschilderung',           farbe: '#7b2cbf', form: 'Beschilderung falsch oder fehlend' },
   'belag':                  { name: 'Belag / Oberfläche',      farbe: '#8d5524', form: 'Belag / Oberfläche' },
   'fehlende-infrastruktur': { name: 'Fehlende Infrastruktur',  farbe: '#0a5fd6', form: 'Fehlende Infrastruktur' },
-  'hindernis':              { name: 'Hindernis / Engstelle',   farbe: '#e85d04', form: 'Hindernis / Engstelle' },
   'gefahr':                 { name: 'Gefährliche Stelle',      farbe: '#d00000', form: 'Gefährliche Stelle' },
   'sonstiges':              { name: 'Sonstiges',               farbe: '#6c757d', form: 'Sonstiges' },
 };
@@ -255,10 +260,12 @@ function zeichne() {
   liste.innerHTML = '';
   const arten = aktiveArten();
   const st = statusFilter();
+  const thema = document.getElementById('themaFilter').value;
   let n = 0, ohneGeo = 0;
 
   for (const issue of issues) {
     if (st !== 'all' && issue.state !== st) continue;
+    if (thema && !issue.labels.includes(thema)) continue;
     const art = artVon(issue);
     if (!arten.includes(art)) continue;
     n++;
@@ -309,12 +316,25 @@ for (const [k, a] of Object.entries(ARTEN)) {
 }
 af.addEventListener('change', zeichne);
 document.querySelectorAll('input[name=st]').forEach(r => r.addEventListener('change', zeichne));
+document.getElementById('themaFilter').addEventListener('change', zeichne);
+
+// Themenfilter aus den vorhandenen "thema:"-Labels aufbauen; versteckt, solange es keine gibt
+function baueThemaFilter() {
+  const sel = document.getElementById('themaFilter');
+  const alt = sel.value;
+  const themen = [...new Set(issues.flatMap(i => i.labels.filter(l => l.startsWith('thema:'))))].sort();
+  sel.innerHTML = '<option value="">Alle Themen</option>' +
+    themen.map(t => `<option value="${esc(t)}">${esc(t.slice(6).trim())}</option>`).join('');
+  sel.value = themen.includes(alt) ? alt : '';
+  sel.style.display = themen.length ? '' : 'none';
+}
 
 async function start(force) {
   const s = document.getElementById('status');
   s.className = ''; s.textContent = 'Lade …';
   try {
     issues = await ladeIssues(force);
+    baueThemaFilter();
     zeichne();
     if (issueLayer.getLayers().length && !location.hash) map.fitBounds(issueLayer.getBounds().pad(0.2), { maxZoom: 16 });
   } catch (e) {
@@ -342,6 +362,7 @@ const HILFE = {
   coords: 'Klicke eine oder mehrere Stellen; unten erscheint das GeoJSON zum Kopieren.',
   add: 'Klicke die neuen Stellen. Unten steht die Geometrie des Issues inklusive der neuen Punkte: kopieren, dann im Issue den Block unter „Geometrie“ ersetzen (Issue öffnen → ··· → Edit).',
 };
+const HILFE_BEARBEITEN = ' Punkte lassen sich ziehen, ein Klick auf einen Punkt entfernt ihn, Ziehen eines Zwischenpunkts fügt einen neuen ein.';
 const HILFE_LEER = {
   melden: 'Wähle Punkt, Linie oder Fläche und klicke in die Karte.',
   coords: 'Klicke Stellen in der Karte und kopiere das GeoJSON, z. B. um eine bestehende Meldung zu erweitern (im Popup „Punkte ergänzen“).',
@@ -357,13 +378,13 @@ function startModus(m, issue) {
   const btn = document.querySelector(`button[data-mode=${m === 'add' ? 'coords' : m}]`);
   if (btn) btn.classList.add('active');
   if (m === 'coords' || m === 'add') {
-    coordsHilfe.textContent = (ergaenzeIssue ? `Issue #${ergaenzeIssue.number}: ` : '') + HILFE[m];
+    coordsHilfe.textContent = (ergaenzeIssue ? `Issue #${ergaenzeIssue.number}: ` : '') + HILFE[m] + HILFE_BEARBEITEN;
     coordsBox.style.display = '';
     coordsIssueLink.style.display = ergaenzeIssue ? '' : 'none';
     if (ergaenzeIssue) coordsIssueLink.href = ergaenzeIssue.url;
     aktualisiereCoordsText();
   } else {
-    hilfe.textContent = HILFE[m];
+    hilfe.textContent = HILFE[m] + HILFE_BEARBEITEN;
     aktionen.style.display = '';
   }
   map.getContainer().style.cursor = 'crosshair';
@@ -397,15 +418,40 @@ map.on('click', e => {
   zeichneSkizze();
 });
 
+// Skizze: Linie/Fläche plus Eckpunkte (ziehen = verschieben, Klick = entfernen)
+// und Zwischenpunkte auf jedem Segment (ziehen = neuen Eckpunkt einfügen).
+const ICON_ECKE = L.divIcon({ className: 'vtx', iconSize: [14, 14] });
+const ICON_MITTE = L.divIcon({ className: 'vtx mid', iconSize: [10, 10] });
+
 function zeichneSkizze() {
   if (skizze) { map.removeLayer(skizze); skizze = null; }
-  const marker = ll => L.circleMarker(ll, { radius: 9, color: '#fff', weight: 2, fillColor: '#111', fillOpacity: .9 });
-  if (punkte.length) {
-    if (modus === 'line') skizze = L.polyline(punkte, { color: '#111', weight: 4, dashArray: '4 6' });
-    else if (modus === 'polygon') skizze = L.polygon(punkte, { color: '#111', weight: 3, dashArray: '4 6', fillOpacity: .15 });
-    else skizze = L.featureGroup(punkte.map(marker));
-    skizze.addTo(map);
+  skizze = L.featureGroup().addTo(map);
+  let form = null;
+  if (modus === 'line' && punkte.length >= 2) form = L.polyline(punkte, { color: '#111', weight: 4, dashArray: '4 6', interactive: false });
+  if (modus === 'polygon' && punkte.length >= 2) form = L.polygon(punkte, { color: '#111', weight: 3, dashArray: '4 6', fillOpacity: .15, interactive: false });
+  if (form) skizze.addLayer(form);
+
+  punkte.forEach((ll, i) => {
+    const m = L.marker(ll, { icon: ICON_ECKE, draggable: true, title: 'Ziehen: verschieben · Klick: entfernen' }).addTo(skizze);
+    m.on('drag', () => { punkte[i] = m.getLatLng(); if (form) form.setLatLngs(punkte); });
+    m.on('dragend', zeichneSkizze);
+    m.on('click', () => { punkte.splice(i, 1); zeichneSkizze(); });
+  });
+
+  if (modus === 'line' || modus === 'polygon') {
+    const n = punkte.length;
+    const segmente = modus === 'polygon' && n >= 3 ? n : n - 1;
+    for (let i = 0; i < segmente; i++) {
+      const a = punkte[i], b = punkte[(i + 1) % n];
+      const mitte = L.latLng((a.lat + b.lat) / 2, (a.lng + b.lng) / 2);
+      const m = L.marker(mitte, { icon: ICON_MITTE, draggable: true, title: 'Ziehen: Punkt einfügen' }).addTo(skizze);
+      let idx = -1;
+      m.on('dragstart', () => { idx = i + 1; punkte.splice(idx, 0, m.getLatLng()); });
+      m.on('drag', () => { punkte[idx] = m.getLatLng(); if (form) form.setLatLngs(punkte); });
+      m.on('dragend', zeichneSkizze);
+    }
   }
+
   btnErstellen.disabled = !((modus === 'point' && punkte.length >= 1) || (modus === 'line' && punkte.length >= 2) || (modus === 'polygon' && punkte.length >= 3));
   document.querySelectorAll('.btnZurueck').forEach(b => b.disabled = !punkte.length);
   if (modus === 'coords' || modus === 'add') aktualisiereCoordsText();
