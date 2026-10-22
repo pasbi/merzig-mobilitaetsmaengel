@@ -1,6 +1,6 @@
 // Karte, Liste, Filter, Popups, Zeichenmodus, Mobil-Panel. Leaflet kommt global aus index.html.
 import { CONFIG, ARTEN, GESCHLOSSEN_FARBE, KARTENSTILE } from './config.js';
-import { ladeIssues, standortVon, geometrie, artVon, statusVon, geometrieAus, esc, adresseFuer, neueMeldungUrl, labelSucheUrl } from './data.js';
+import { ladeIssues, standortVon, geometrie, artenVon, statusVon, geometrieAus, esc, adresseFuer, neueMeldungUrl, labelSucheUrl } from './data.js';
 
 const $ = id => document.getElementById(id);
 
@@ -39,14 +39,15 @@ function zeichne() {
   const passt = issue =>
     (st === 'all' || issue.state === st) &&
     (!thema || issue.labels.includes(thema)) &&
-    arten.includes(artVon(issue));
+    artenVon(issue).some(a => arten.includes(a));
 
   // Ein Eintrag wird gezeigt, wenn er selbst passt oder eines seiner Sub-Issues
   const sichtbar = issue => passt(issue) || issue.kinder.some(k => byNr[k] && sichtbar(byNr[k]));
 
   function eintrag(issue, container) {
-    const art = artVon(issue);
-    const farbe = issue.state === 'closed' ? GESCHLOSSEN_FARBE : ARTEN[art].farbe;
+    const artListe = artenVon(issue);
+    const artName = artListe.map(a => ARTEN[a].name).join(', ');
+    const farbe = issue.state === 'closed' ? GESCHLOSSEN_FARBE : ARTEN[artListe[0]].farbe;
     const geo = geometrie(issue.body);
     const selbst = passt(issue);
     if (selbst) n++;
@@ -54,7 +55,7 @@ function zeichne() {
     const li = document.createElement('li');
     li.className = issue.state + (geo ? '' : ' ohneGeo') + (selbst ? '' : ' nurKontext');
     li.style.borderLeftColor = farbe;
-    li.title = `${ARTEN[art].name} · ${issue.state === 'open' ? 'offen' : 'erledigt'} · Status: ${statusVon(issue)}`;
+    li.title = `${artName} · ${issue.state === 'open' ? 'offen' : 'erledigt'} · Status: ${statusVon(issue)}`;
     li.innerHTML = `<span class="nr" title="Issue-Nummer auf GitHub">#${issue.number}</span><span>${esc(issue.title)}</span>`;
     container.appendChild(li);
 
@@ -63,7 +64,7 @@ function zeichne() {
         style: () => ({ color: farbe, weight: 4, opacity: .9, fillOpacity: .25, dashArray: issue.state === 'closed' ? '6 6' : null }),
         pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius: 9, color: '#fff', weight: 2, fillColor: farbe, fillOpacity: .95 }),
       });
-      layer.bindPopup(popup(issue, art));
+      layer.bindPopup(popup(issue, artName));
       layer.addTo(issueLayer);
       li.onclick = () => { if (istMobil()) panelSchliessen(); map.fitBounds(layer.getBounds().pad(0.5), { maxZoom: 18 }); layer.openPopup(); };
     } else if (!geo) {
@@ -99,10 +100,10 @@ function zeichne() {
   $('filterHinweis').textContent = aktiv.length ? `· ${aktiv.join(', ')}` : '';
 }
 
-function popup(issue, art) {
+function popup(issue, artName) {
   const adresse = standortVon(issue);
   return `<strong><a href="${issue.url}" target="_blank" rel="noopener">#${issue.number} ${esc(issue.title)}</a></strong>
-    <div class="muted" style="font-size:12px">${ARTEN[art].name} · ${issue.state === 'open' ? 'offen' : 'erledigt'} · Status: ${esc(statusVon(issue))}</div>
+    <div class="muted" style="font-size:12px">${esc(artName)} · ${issue.state === 'open' ? 'offen' : 'erledigt'} · Status: ${esc(statusVon(issue))}</div>
     ${adresse ? `<div>${esc(adresse).replace(/\n+/g, '<br>')}</div>` : ''}
     <div class="chips">${issue.labels.map(chip).join('')}</div>`;
 }

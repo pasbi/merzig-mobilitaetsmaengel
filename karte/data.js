@@ -99,15 +99,14 @@ export function geometrie(body) {
   return null;
 }
 
-export function artVon(issue) {
-  const l = issue.labels.find(n => n.startsWith('art:'));
-  if (l) {
-    const k = l.slice(4).trim();
-    if (ARTEN[k]) return k;
-  }
+// Alle Arten eines Issues (mehrere "art:"-Labels sind erlaubt); ohne Label der Dropdown-Wert, sonst "sonstiges".
+// Die erste Art bestimmt die Farbe auf der Karte.
+export function artenVon(issue) {
+  const aus = issue.labels.filter(n => n.startsWith('art:')).map(n => n.slice(4).trim()).filter(k => ARTEN[k]);
+  if (aus.length) return aus;
   const f = feld(issue.body, 'Art des Mangels');
   const k = Object.keys(ARTEN).find(k => ARTEN[k].form === f);
-  return k || 'sonstiges';
+  return [k || 'sonstiges'];
 }
 
 export function statusVon(issue) {

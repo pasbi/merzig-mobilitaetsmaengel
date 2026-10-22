@@ -1,0 +1,37 @@
+# Hält die Gruppen "status:" und "schwere:" exklusiv: wird ein Label einer Gruppe gesetzt,
+# fliegen die anderen Labels derselben Gruppe vom Issue (das zuletzt gesetzte gewinnt).
+name: Labels exklusiv
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  issues: write
+
+# Läufe für dasselbe Issue nacheinander, damit sich zwei fast gleichzeitige Label-Ereignisse nicht gegenseitig löschen
+concurrency:
+  group: labels-${{ github.event.issue.number }}
+
+jobs:
+  exklusiv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const GRUPPEN = ['status:', 'schwere:']; // 'art:' darf mehrfach vorkommen
+            const neu = context.payload.label.name;
+            const gruppe = GRUPPEN.find(g => neu.startsWith(g));
+            if (!gruppe) { core.info(`"${neu}" gehört zu keiner exklusiven Gruppe.`); return; }
+
+            const issue = context.payload.issue;
+            const alt = issue.labels.map(l => l.name).filter(n => n.startsWith(gruppe) && n !== neu);
+            for (const name of alt) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number, name,
+              });
+              core.info(`Entfernt: "${name}" (ersetzt durch "${neu}")`);
+            }
+            if (!alt.length) core.info('Nichts zu tun.');
