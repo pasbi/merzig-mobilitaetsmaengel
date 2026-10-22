@@ -5,8 +5,8 @@
 Sammlung von Mängeln an der Rad-, Fuß- und Verkehrsinfrastruktur in Merzig.
 Jeder Mangel ist ein GitHub-Issue mit GeoJSON-Geometrie; die Seite in `karte/` zeigt alle Issues auf einer Karte.
 Aufbau von `karte/`: `index.html` (nur Markup), `style.css`, `config.js` (Repo, Kartenmitte, Kategorien `ARTEN`, Kartenstile), `data.js` (Laden, Body-Parser, Geometrie-Erzeugung; kein DOM, kein Leaflet, mit `node` importierbar) und `app.js` (Karte, Liste, Filter, Zeichenmodus, Mobil-Panel); ES-Module ohne Build-Schritt.
-Der Workflow `.github/workflows/issues.yml` erledigt alles zu Issues in Reihe: Labels pflegen (Formular-Zuordnung, exklusive Gruppen), `karte/issues.json` erzeugen, `karte/` als GitHub Pages veröffentlichen (Source „GitHub Actions“, keine Commits); die Seite fällt ohne `issues.json` auf die GitHub-API zurück.
-Ein Workflow statt mehrerer, weil Label-Änderungen aus Actions keine weiteren Läufe auslösen und die Karte sonst die gesetzten Labels erst beim nächsten Ereignis sähe.
+Der Workflow `.github/workflows/issues.yml` erledigt alles zu Issues in einem Job: alle Issues laden, Labels nachholend pflegen (fehlende `art:`/`schwere:` aus dem Formular, doppelte `status:`/`schwere:` auflösen), daraus `karte/issues.json` schreiben und `karte/` als GitHub Pages veröffentlichen (Source „GitHub Actions“, keine Commits); die Seite fällt ohne `issues.json` auf die GitHub-API zurück.
+Ein Job über alle Issues statt ereignisbezogener Schritte, damit jeder Lauf (auch der Stundenlauf nach einem Ausfall) denselben Endzustand herstellt und Label-Änderungen aus Actions keinen weiteren Lauf brauchen.
 Das Datenformat von `issues.json` (`{stand, labelFarben:{name:hex}, issues:[{number,title,state,url,labels,body,updated,kinder,eltern}]}`) muss mit `ladeIssuesVonApi()` in `data.js` übereinstimmen.
 Keine Build-Schritte, keine Abhängigkeiten außer Leaflet per CDN.
 
@@ -16,7 +16,7 @@ Keine Build-Schritte, keine Abhängigkeiten außer Leaflet per CDN.
   Umbenennen zuerst auf GitHub (nimmt die Issues mit), dann `labels.json` nachziehen.
 - Der Workflow läuft bei Issue-Ereignissen, bei Push nach `karte/` und stündlich; Läufe werden nacheinander abgearbeitet, nicht abgebrochen.
   Sub-Issue-Verknüpfungen lösen kein Ereignis aus; sofort sichtbar werden sie über *Actions → Pages → Run workflow*.
-- Label-Schritt: setzt `art:` und `schwere:` aus den Dropdowns beim Anlegen (beim Bearbeiten nur fehlende Gruppen) und hält `status:` und `schwere:` exklusiv (das zuletzt gesetzte Label verdrängt die anderen).
+- Label-Pflege im Workflow: ergänzt fehlende `art:`/`schwere:` aus den Dropdowns (nie überschreiben, Korrekturen des Teams bleiben) und hält `status:` und `schwere:` exklusiv (bei Doppelung bleibt das laut Issue-Historie zuletzt gesetzte Label).
 - Lokal ansehen: `python -m http.server -d karte 8000`; ohne `issues.json` liest die Seite direkt von der GitHub-API (60 Anfragen/Stunde, ETag-Abgleich, eine Anfrage je Eltern-Issue).
   `file://` geht nicht, der OSM-Kachelserver verlangt einen Referer.
 - Beim Melden fragt die Seite die Straße per Nominatim ab und befüllt nur Titel und Geometrie vor.
@@ -55,7 +55,7 @@ Eine neue Kategorie oder Schwere muss an allen vier Stellen eingetragen werden:
 1. `.github/ISSUE_TEMPLATE/mangel.yml` (Dropdown-Text)
 2. `labels.json` (Label-Name und Farbe)
 3. `karte/config.js`, Objekt `ARTEN` (Schlüssel = Label-Suffix, `form` = exakter Dropdown-Text, `farbe` = Hexfarbe wie in `labels.json`)
-4. `.github/workflows/issues.yml`, Job `labels`, Tabellen `ART` und `SCHWERE` (Dropdown-Text → Label)
+4. `.github/workflows/issues.yml`, Tabellen `ART` und `SCHWERE` (Dropdown-Text → Label)
 
 Labels sind die Wahrheit, die Dropdowns nur die Eingabe.
 Neue Status-, Zuständigkeits- oder Themen-Labels brauchen nur `labels.json` und die Tabelle im `README.md`.

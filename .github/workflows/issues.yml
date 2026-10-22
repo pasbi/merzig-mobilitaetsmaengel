@@ -1,6 +1,6 @@
-# Ein Workflow für alles, was an Issues hängt, in Reihe: Labels pflegen, issues.json bauen, Pages deployen.
-# Ein Lauf pro Ereignis. Der Bau liest immer alle Issues frisch, deshalb deployt jeder Lauf den Gesamtstand.
-# Nebenläufigkeit je Job: Label-Pflege pro Issue, Bauen/Deployen global in Reihe; nie wird ein laufender Job abgebrochen.
+# Ein Workflow für alles, was an Issues hängt: Labels pflegen, issues.json bauen, Pages deployen.
+# Jeder Lauf liest alle Issues, repariert Labels nachholend (auch nach Ausfällen) und deployt den Gesamtstand;
+# welches Ereignis ihn ausgelöst hat, spielt keine Rolle.
 # Ereignisse, die eine Action mit dem Standard-Token auslöst, starten keinen weiteren Lauf (kein Kreislauf).
 # Voraussetzung: Settings → Pages → Source: "GitHub Actions".
 name: Issues und Karte
@@ -22,39 +22,23 @@ permissions:
   pages: write
   id-token: write
 
+# Global in Reihe, nie abbrechen: ein wartender Lauf wird nur durch einen neueren ersetzt, der denselben Gesamtstand liest.
+concurrency:
+  group: issues-und-karte
+  cancel-in-progress: false
+
 jobs:
-  labels:
-    if: github.event_name == 'issues'
+  build:
     runs-on: ubuntu-latest
-    # Pro Issue in Reihe: bei mehreren schnellen Änderungen am selben Issue verarbeitet der letzte Lauf den Endstand
-    concurrency:
-      group: labels-${{ github.event.issue.number }}
-      cancel-in-progress: false
     steps:
-      - uses: actions/github-script@v9
+      - uses: actions/checkout@v7
+
+      - name: Labels pflegen und issues.json erzeugen
+        uses: actions/github-script@v9
         with:
           script: |
             const { owner, repo } = context.repo;
-            const issue = context.payload.issue;
-            const action = context.payload.action;
-            const vorhanden = issue.labels.map(l => l.name);
 
-            // ---- Exklusive Gruppen: das zuletzt gesetzte Label verdrängt die anderen derselben Gruppe
-            if (action === 'labeled') {
-              const GRUPPEN = ['status:', 'schwere:']; // 'art:' darf mehrfach vorkommen
-              const neu = context.payload.label.name;
-              const gruppe = GRUPPEN.find(g => neu.startsWith(g));
-              if (gruppe) {
-                for (const name of vorhanden.filter(n => n.startsWith(gruppe) && n !== neu)) {
-                  await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name });
-                  core.info(`Entfernt: "${name}" (ersetzt durch "${neu}")`);
-                }
-              }
-              return;
-            }
-
-            // ---- Labels aus den Dropdowns des Formulars (beim Anlegen; beim Bearbeiten nur fehlende Gruppen)
-            if (action !== 'opened' && action !== 'edited') return;
             // Dropdown-Text (exakt wie in .github/ISSUE_TEMPLATE/mangel.yml) -> Label
             const ART = {
               'Beschilderung falsch oder fehlend':   'art: schild',
@@ -71,42 +55,51 @@ jobs:
               'mittel (behindert)':   'schwere: mittel',
               'hoch (gefährlich)':    'schwere: hoch',
             };
-            const body = issue.body || '';
-            const feld = label => {
+            const EXKLUSIV = ['status:', 'schwere:']; // 'art:' darf mehrfach vorkommen
+            const feld = (body, label) => {
               const m = body.match(new RegExp('### ' + label + '\\s*\\n+([\\s\\S]*?)(?=\\n### |$)'));
               return m ? m[1].trim() : '';
             };
-            const hinzu = [];
-            for (const g of [{ prefix: 'art:', neu: ART[feld('Art des Mangels')] }, { prefix: 'schwere:', neu: SCHWERE[feld('Schwere')] }]) {
-              if (!g.neu) continue;
-              if (action === 'edited' && vorhanden.some(n => n.startsWith(g.prefix))) continue;
-              if (!vorhanden.includes(g.neu)) hinzu.push(g.neu);
+
+            const roh = (await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', per_page: 100 }))
+              .filter(i => !i.pull_request);
+
+            // ---- Labels pflegen, nachholend über alle Issues
+            for (const i of roh) {
+              let labels = i.labels.map(l => l.name);
+              const body = i.body || '';
+
+              // Fehlende Gruppe aus dem Formular ergänzen
+              const hinzu = [];
+              for (const g of [{ prefix: 'art:', neu: ART[feld(body, 'Art des Mangels')] }, { prefix: 'schwere:', neu: SCHWERE[feld(body, 'Schwere')] }]) {
+                if (g.neu && !labels.some(n => n.startsWith(g.prefix))) hinzu.push(g.neu);
+              }
+              if (hinzu.length) {
+                await github.rest.issues.addLabels({ owner, repo, issue_number: i.number, labels: hinzu });
+                labels = labels.concat(hinzu);
+                core.info(`#${i.number}: gesetzt ${hinzu.join(', ')}`);
+              }
+
+              // Exklusive Gruppen: bei Doppelung gewinnt das zuletzt gesetzte Label (laut Issue-Historie)
+              for (const prefix of EXKLUSIV) {
+                const mehrere = labels.filter(n => n.startsWith(prefix));
+                if (mehrere.length < 2) continue;
+                const events = await github.paginate(github.rest.issues.listEvents, { owner, repo, issue_number: i.number, per_page: 100 });
+                const zuletzt = events.filter(e => e.event === 'labeled' && e.label && mehrere.includes(e.label.name)).pop();
+                const behalten = zuletzt ? zuletzt.label.name : mehrere[mehrere.length - 1];
+                for (const name of mehrere.filter(n => n !== behalten)) {
+                  await github.rest.issues.removeLabel({ owner, repo, issue_number: i.number, name });
+                  labels = labels.filter(n => n !== name);
+                  core.info(`#${i.number}: entfernt "${name}" (behalten "${behalten}")`);
+                }
+              }
+              i._labels = labels;
             }
-            if (hinzu.length) {
-              await github.rest.issues.addLabels({ owner, repo, issue_number: issue.number, labels: hinzu });
-              core.info('Labels gesetzt: ' + hinzu.join(', '));
-            } else core.info('Nichts zu tun.');
 
-  build:
-    needs: labels
-    if: always() && (needs.labels.result == 'success' || needs.labels.result == 'skipped')
-    runs-on: ubuntu-latest
-    # Global in Reihe; ein wartender Bau wird nur durch einen neueren ersetzt, der mindestens so aktuelle Daten liest
-    concurrency:
-      group: build
-      cancel-in-progress: false
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: issues.json erzeugen
-        uses: actions/github-script@v9
-        with:
-          script: |
-            const { owner, repo } = context.repo;
-            const roh = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', per_page: 100 });
-            const issues = roh.filter(i => !i.pull_request).map(i => ({
+            // ---- issues.json aus demselben Datenstand (inklusive der eben gesetzten Labels)
+            const issues = roh.map(i => ({
               number: i.number, title: i.title, state: i.state, url: i.html_url,
-              labels: i.labels.map(l => l.name), body: i.body || '',
+              labels: i._labels, body: i.body || '',
               updated: i.updated_at, kinder: [], eltern: null,
               _sub: (i.sub_issues_summary && i.sub_issues_summary.total) || 0,
             }));
@@ -116,8 +109,9 @@ jobs:
               for (const s of subs) if (byNr[s.number]) { p.kinder.push(s.number); byNr[s.number].eltern = p.number; }
             }
             issues.forEach(i => delete i._sub);
+            // Label-Farben: aus den Issues plus Repo-Labels (damit auch gerade erst gesetzte Labels eine Farbe haben)
             const labelFarben = {};
-            roh.forEach(i => i.labels.forEach(l => { labelFarben[l.name] = l.color; }));
+            (await github.paginate(github.rest.issues.listLabelsForRepo, { owner, repo, per_page: 100 })).forEach(l => { labelFarben[l.name] = l.color; });
             const fs = require('fs');
             fs.writeFileSync('karte/issues.json', JSON.stringify({ stand: new Date().toISOString(), labelFarben, issues }));
             core.info(`${issues.length} Issues geschrieben`);
@@ -129,9 +123,6 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    concurrency:
-      group: deploy
-      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
