@@ -21,6 +21,7 @@ body:
         - Fehlende Infrastruktur
         - Hindernis / Engstelle
         - Gefährliche Stelle
+        - Vorschlag / Idee (kein akuter Mangel)
         - Sonstiges
     validations:
       required: true

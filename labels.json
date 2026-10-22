@@ -5,6 +5,7 @@
   { "name": "art: belag",                  "color": "8d5524", "description": "Belag / Oberfläche" },
   { "name": "art: fehlende-infrastruktur", "color": "0a5fd6", "description": "Fehlende Infrastruktur" },
   { "name": "art: gefahr",                 "color": "d00000", "description": "Gefährliche Stelle" },
+  { "name": "art: vorschlag",              "color": "2e7d32", "description": "Idee oder Vorschlag ohne akuten Mangel, z. B. neuer Haltepunkt" },
   { "name": "art: sonstiges",              "color": "6c757d", "description": "Sonstiges" },
 
   { "name": "schwere: niedrig", "color": "c8e6c9", "description": "ärgerlich" },

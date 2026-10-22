@@ -33,7 +33,8 @@ Der Zustand wird über `status:`-Labels geführt, jedes Issue trägt genau eines
 
 Weitere Label-Gruppen:
 
-- `art:` – Kategorie, bestimmt die Farbe auf der Karte (genau eines).
+- `art:` – Kategorie; mehrere erlaubt, das erste bestimmt die Farbe auf der Karte.
+  `art: vorschlag` ist für Ideen ohne akuten Mangel (z. B. ein neuer Bahnhaltepunkt); Mangel ist, was einen bestehenden Weg unbenutzbar oder gefährlich macht.
 - `schwere:` – niedrig, mittel, hoch (genau eines).
 - `zuständigkeit:` – Stadt, Landkreis, Land, Bund, privat oder unklar; bei geteilter Zuständigkeit mehrere setzen.
 - `thema:` – bündelt mehrere Meldungen zu einem Thema (z. B. `thema: einbahnstraße`); die Karte bietet dafür einen Filter.

@@ -24,6 +24,7 @@ jobs:
               'Fehlende Infrastruktur':              'art: fehlende-infrastruktur',
               'Hindernis / Engstelle':               'art: hindernis',
               'Gefährliche Stelle':                  'art: gefahr',
+              'Vorschlag / Idee (kein akuter Mangel)': 'art: vorschlag',
               'Sonstiges':                           'art: sonstiges',
             };
             const SCHWERE = {

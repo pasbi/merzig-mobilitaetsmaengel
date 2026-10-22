@@ -17,6 +17,7 @@ export const ARTEN = {
   'belag':                  { name: 'Belag / Oberfläche',      farbe: '#8d5524', form: 'Belag / Oberfläche' },
   'fehlende-infrastruktur': { name: 'Fehlende Infrastruktur',  farbe: '#0a5fd6', form: 'Fehlende Infrastruktur' },
   'gefahr':                 { name: 'Gefährliche Stelle',      farbe: '#d00000', form: 'Gefährliche Stelle' },
+  'vorschlag':              { name: 'Vorschlag / Idee',        farbe: '#2e7d32', form: 'Vorschlag / Idee (kein akuter Mangel)' },
   'sonstiges':              { name: 'Sonstiges',               farbe: '#6c757d', form: 'Sonstiges' },
 };
 export const GESCHLOSSEN_FARBE = '#9a9a9a';

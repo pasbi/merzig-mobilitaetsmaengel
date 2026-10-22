@@ -16,7 +16,7 @@ Keine Build-Schritte, keine Abhängigkeiten außer Leaflet per CDN.
 - Die Pages-Action läuft bei Issue-Ereignissen, bei Push nach `karte/` und stündlich.
   Sub-Issue-Verknüpfungen lösen kein Ereignis aus; sofort sichtbar werden sie über *Actions → Pages → Run workflow*.
 - Die Action `labels-aus-formular.yml` setzt `art:` und `schwere:` aus den Dropdowns beim Anlegen; beim Bearbeiten ergänzt sie nur fehlende Gruppen.
-- Die Action `labels-exklusiv.yml` hält `status:`, `art:` und `schwere:` exklusiv: das zuletzt gesetzte Label einer Gruppe verdrängt die anderen.
+- Die Action `labels-exklusiv.yml` hält `status:` und `schwere:` exklusiv: das zuletzt gesetzte Label einer Gruppe verdrängt die anderen.
 - Lokal ansehen: `python -m http.server -d karte 8000`; ohne `issues.json` liest die Seite direkt von der GitHub-API (60 Anfragen/Stunde, ETag-Abgleich, eine Anfrage je Eltern-Issue).
   `file://` geht nicht, der OSM-Kachelserver verlangt einen Referer.
 - Beim Melden fragt die Seite die Straße per Nominatim ab und befüllt nur Titel und Geometrie vor.
@@ -37,7 +37,7 @@ Das `README.md` richtet sich an Meldende und Mitwirkende; Technik und Betrieb ge
 - Formularfelder werden von GitHub als `### Feldname\n\nWert` gerendert; `karte/data.js` liest sie mit `feld(body, label)`.
   Feldnamen im Formular nicht umbenennen, ohne den Parser anzupassen (er kennt für den Standort den alten Namen „Ort (Adresse oder Beschreibung)“ und den neuen „Standort“).
 - Formularfelder: Art, Schwere, Problem, Lösungsvorschlag (optional), Standort (Adresse, Bereich oder Liste mit einer Zeile je Stelle in der Reihenfolge der Geometrie-Punkte), Geometrie, Lizenz-Checkboxen.
-- Labels: genau eines aus `art: …` (Farbe auf der Karte), `schwere: …` und `status: …`; null bis mehrere aus `zuständigkeit: …` (Stadt, Landkreis, Land, Bund, privat, unklar; geteilte Zuständigkeit ist normal); optional `thema: …` für Bündel mehrerer Issues (die Karte baut daraus automatisch einen Filter, keine Pflege in `ARTEN` nötig); dazu `duplikat`.
+- Labels: genau eines aus `schwere: …` und `status: …`; eines oder mehrere aus `art: …` (das erste bestimmt die Farbe auf der Karte, der Filter greift bei jeder Art); null bis mehrere aus `zuständigkeit: …` (Stadt, Landkreis, Land, Bund, privat, unklar; geteilte Zuständigkeit ist normal); optional `thema: …` für Bündel mehrerer Issues (die Karte baut daraus automatisch einen Filter, keine Pflege in `ARTEN` nötig); dazu `duplikat`.
   Bündel zusätzlich als Eltern-Issue mit Sub-Issues strukturieren; dafür gibt es die Vorlage `thema.yml` ohne Geometrie (erscheint auf der Karte nur in der Liste).
   Vollständige Liste und Bedeutung in `labels.json` und `README.md`.
 - Geschlossen wird ein Issue nur mit `status: behoben` oder `status: obsolet`.
