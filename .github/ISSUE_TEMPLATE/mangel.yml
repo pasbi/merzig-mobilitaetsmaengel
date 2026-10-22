@@ -39,19 +39,29 @@ body:
       required: true
 
   - type: textarea
-    id: beschreibung
+    id: problem
     attributes:
-      label: Beschreibung
-      description: Was ist das Problem, wen betrifft es, was wäre die Lösung? Fotos können per Drag & Drop eingefügt werden.
-      placeholder: Der Laternenmast steht mitten auf dem Radweg, nachts schlecht sichtbar ...
+      label: Problem
+      description: Was ist los, wen behindert oder gefährdet es, seit wann? Fotos können per Drag & Drop eingefügt werden.
+      placeholder: Der Laternenmast steht mitten auf dem Radweg, Restbreite etwa 60 cm, nachts schlecht sichtbar ...
     validations:
       required: true
 
-  - type: input
-    id: adresse
+  - type: textarea
+    id: loesung
     attributes:
-      label: Ort (Adresse oder Beschreibung)
-      placeholder: Poststraße 12, vor der Bäckerei
+      label: Lösungsvorschlag
+      description: Optional. Was müsste passieren, damit der Mangel behoben ist? Gern auch Alternativen oder Verweise auf Richtlinien.
+      placeholder: Mast an den Rand versetzen; übergangsweise die Engstelle markieren.
+
+  - type: textarea
+    id: ort
+    attributes:
+      label: Standort
+      description: Genaue Adresse, Bereich („Fußgängerzone“) oder Liste, bei mehreren Stellen eine Zeile je Standort in der Reihenfolge der Punkte in der Geometrie.
+      placeholder: |
+        Poststraße 12, vor der Bäckerei
+        Marktplatz, Südseite vor dem Brunnen
     validations:
       required: true
 

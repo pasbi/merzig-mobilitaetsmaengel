@@ -288,10 +288,11 @@ function zeichne() {
 
 function popup(issue, art) {
   const chips = issue.labels.map(l => `<span class="chip">${esc(l)}</span>`).join('');
-  const adresse = feld(issue.body, 'Ort (Adresse oder Beschreibung)');
+  // Neuer Feldname "Standort", alter "Ort (Adresse oder Beschreibung)" (Issues #1-#3)
+  const adresse = feld(issue.body, 'Standort') || feld(issue.body, 'Ort (Adresse oder Beschreibung)');
   return `<strong><a href="${issue.url}" target="_blank" rel="noopener">#${issue.number} ${esc(issue.title)}</a></strong>
     <div class="muted" style="font-size:12px">${ARTEN[art].name} · ${issue.state === 'open' ? 'offen' : 'erledigt'} · Status: ${esc(statusVon(issue))}</div>
-    ${adresse ? `<div>${esc(adresse)}</div>` : ''}
+    ${adresse ? `<div>${esc(adresse).replace(/\n+/g, '<br>')}</div>` : ''}
     <div class="chips">${chips}</div>
     <button onclick="ergaenzen(${issue.number})">Punkte ergänzen</button>`;
 }

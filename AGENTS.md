@@ -20,7 +20,8 @@ Das `README.md` richtet sich an Meldende und Mitwirkende; technische Einrichtung
   Die Karte liest jede Form (nackte Geometrie, Feature, FeatureCollection, GeometryCollection), erzeugt selbst aber immer eine FeatureCollection aus einzelnen Features, weil GitHubs Vorschau im Issue nackte Geometrien nicht rendert.
   Mehrere Punkte als mehrere Point-Features, nicht als MultiPoint.
 - Formularfelder werden von GitHub als `### Feldname\n\nWert` gerendert; `docs/index.html` liest sie mit `feld(body, label)`.
-  Feldnamen im Formular nicht umbenennen, ohne den Parser anzupassen.
+  Feldnamen im Formular nicht umbenennen, ohne den Parser anzupassen (er kennt für den Standort den alten Namen „Ort (Adresse oder Beschreibung)“ und den neuen „Standort“).
+- Formularfelder: Art, Schwere, Problem, Lösungsvorschlag (optional), Standort (Adresse, Bereich oder Liste mit einer Zeile je Stelle in der Reihenfolge der Geometrie-Punkte), Geometrie, Lizenz-Checkboxen.
 - Labels: genau eines aus `art: …` (Farbe auf der Karte), `schwere: …` und `status: …`; null bis mehrere aus `zuständigkeit: …` (Stadt, Landkreis, Land, Bund, privat, unklar; geteilte Zuständigkeit ist normal); dazu `duplikat`.
   Vollständige Liste und Bedeutung in `labels.json` und `README.md`.
 - Geschlossen wird ein Issue nur mit `status: behoben` oder `status: obsolet`.
