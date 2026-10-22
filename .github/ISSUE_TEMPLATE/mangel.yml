@@ -60,8 +60,9 @@ body:
     attributes:
       label: Geometrie
       description: >-
-        GeoJSON des Orts (Punkt, Linie oder Fläche). Wird von der Karte automatisch ausgefüllt.
-        Von Hand reicht auch ein Punkt: {"type":"Point","coordinates":[6.6400,49.4450]} (erst Länge, dann Breite).
+        GeoJSON des Orts (Punkt, Linie oder Fläche), ohne ```-Zeilen drumherum. Wird von der Karte automatisch ausgefüllt.
+        Von Hand als FeatureCollection, z. B. ein Punkt (erst Länge, dann Breite):
+        {"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[6.6400,49.4450]}}]}
       render: geojson
     validations:
       required: true

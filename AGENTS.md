@@ -15,7 +15,9 @@ Das `README.md` richtet sich an Meldende und Mitwirkende; technische Einrichtung
 
 ## Datenmodell
 
-- Geometrie steht im Issue-Body als ```` ```geojson ```` -Block (Point, LineString, Polygon, Feature oder FeatureCollection), Koordinaten in Länge/Breite-Reihenfolge.
+- Geometrie steht im Issue-Body als ```` ```geojson ```` -Block, Koordinaten in Länge/Breite-Reihenfolge.
+  Die Karte liest jede Form (nackte Geometrie, Feature, FeatureCollection, GeometryCollection), erzeugt selbst aber immer eine FeatureCollection aus einzelnen Features, weil GitHubs Vorschau im Issue nackte Geometrien nicht rendert.
+  Mehrere Punkte als mehrere Point-Features, nicht als MultiPoint.
 - Formularfelder werden von GitHub als `### Feldname\n\nWert` gerendert; `docs/index.html` liest sie mit `feld(body, label)`.
   Feldnamen im Formular nicht umbenennen, ohne den Parser anzupassen.
 - Labels: genau eines aus `art: …` (Farbe auf der Karte), `schwere: …` und `status: …`; null bis mehrere aus `zuständigkeit: …` (Stadt, Landkreis, Land, Bund, privat, unklar; geteilte Zuständigkeit ist normal); dazu `duplikat`.

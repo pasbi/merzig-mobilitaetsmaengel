@@ -64,6 +64,8 @@
   #liste li .nr { color: var(--fg-2); }
   #liste li.closed { opacity: .6; text-decoration: line-through; }
   #meldenHilfe { font-size: 13px; }
+  textarea { width: 100%; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg-2); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 6px; resize: vertical; }
+  .leaflet-popup-content button { font-size: 12px; padding: 3px 8px; margin-top: 4px; }
   .leaflet-popup-content { font: 14px/1.4 system-ui, sans-serif; }
   .leaflet-popup-content .chips { display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0; }
   .chip { font-size: 11px; padding: 1px 7px; border-radius: 10px; background: #eee; color: #222; border: 1px solid #ccc; }
@@ -91,6 +93,22 @@
     <div class="row" id="meldenAktionen" style="margin-top:8px; display:none">
       <button class="primary" id="btnErstellen" disabled>Meldung auf GitHub erstellen</button>
       <button id="btnAbbrechen">Abbrechen</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Koordinaten / Punkte ergänzen</h2>
+    <div class="row">
+      <button data-mode="coords" id="btnCoords">Koordinaten abgreifen</button>
+    </div>
+    <p id="coordsHilfe" class="muted" style="margin-top:8px">Klicke Stellen in der Karte und kopiere das GeoJSON, z. B. um eine bestehende Meldung zu erweitern (im Popup „Punkte ergänzen“).</p>
+    <div id="coordsBox" style="display:none; margin-top:8px">
+      <textarea id="coordsText" readonly rows="5" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:6px; align-items:center">
+        <button class="primary" id="btnKopieren">Kopieren</button>
+        <a id="coordsIssueLink" href="#" target="_blank" rel="noopener" style="display:none">Issue bearbeiten ↗</a>
+        <button id="btnCoordsEnde">Fertig</button>
+      </div>
     </div>
   </section>
 
@@ -192,7 +210,7 @@ function geometrie(body) {
   try {
     const g = JSON.parse(m[1]);
     if (g.type === 'FeatureCollection' || g.type === 'Feature') return g;
-    if (g.type && g.coordinates) return { type: 'Feature', geometry: g, properties: {} };
+    if (g.type === 'GeometryCollection' || (g.type && g.coordinates)) return { type: 'Feature', geometry: g, properties: {} };
   } catch (e) {}
   return null;
 }
@@ -264,7 +282,8 @@ function popup(issue, art) {
   return `<strong><a href="${issue.url}" target="_blank" rel="noopener">#${issue.number} ${esc(issue.title)}</a></strong>
     <div class="muted" style="font-size:12px">${ARTEN[art].name} · ${issue.state === 'open' ? 'offen' : 'erledigt'} · Status: ${esc(statusVon(issue))}</div>
     ${adresse ? `<div>${esc(adresse)}</div>` : ''}
-    <div class="chips">${chips}</div>`;
+    <div class="chips">${chips}</div>
+    <button onclick="ergaenzen(${issue.number})">Punkte ergänzen</button>`;
 }
 
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -296,58 +315,128 @@ document.getElementById('btnReload').onclick = () => start(true);
 start(false);
 
 // ---------- Mangel melden ----------
-let modus = null, punkte = [], skizze = null;
+// Modi: point/line/polygon = neue Meldung; coords = Koordinaten sammeln; add = Punkte an bestehendes Issue anhängen
+let modus = null, punkte = [], skizze = null, ergaenzeIssue = null;
 const hilfe = document.getElementById('meldenHilfe');
 const aktionen = document.getElementById('meldenAktionen');
 const btnErstellen = document.getElementById('btnErstellen');
+const coordsHilfe = document.getElementById('coordsHilfe');
+const coordsBox = document.getElementById('coordsBox');
+const coordsText = document.getElementById('coordsText');
+const coordsIssueLink = document.getElementById('coordsIssueLink');
 const HILFE = {
   point: 'Klicke auf die Stelle des Mangels.',
   line: 'Klicke die Punkte entlang des Abschnitts, dann „Meldung erstellen“.',
   polygon: 'Klicke die Eckpunkte der Fläche (mindestens 3), dann „Meldung erstellen“.',
+  coords: 'Klicke eine oder mehrere Stellen; unten erscheint das GeoJSON zum Kopieren.',
+  add: 'Klicke die neuen Stellen. Unten steht die Geometrie des Issues inklusive der neuen Punkte: kopieren, dann im Issue den Block unter „Geometrie“ ersetzen (Issue öffnen → ··· → Edit).',
+};
+const HILFE_LEER = {
+  melden: 'Wähle Punkt, Linie oder Fläche und klicke in die Karte.',
+  coords: 'Klicke Stellen in der Karte und kopiere das GeoJSON, z. B. um eine bestehende Meldung zu erweitern (im Popup „Punkte ergänzen“).',
 };
 
-document.querySelectorAll('#meldenButtons button').forEach(b => b.onclick = () => startModus(b.dataset.mode));
+document.querySelectorAll('#meldenButtons button, #btnCoords').forEach(b => b.onclick = () => startModus(b.dataset.mode));
 document.getElementById('btnAbbrechen').onclick = endeModus;
+document.getElementById('btnCoordsEnde').onclick = endeModus;
 
-function startModus(m) {
+function startModus(m, issue) {
   endeModus();
-  modus = m;
-  document.querySelector(`#meldenButtons button[data-mode=${m}]`).classList.add('active');
-  hilfe.textContent = HILFE[m];
-  aktionen.style.display = '';
+  modus = m; ergaenzeIssue = issue || null;
+  const btn = document.querySelector(`button[data-mode=${m === 'add' ? 'coords' : m}]`);
+  if (btn) btn.classList.add('active');
+  if (m === 'coords' || m === 'add') {
+    coordsHilfe.textContent = (ergaenzeIssue ? `Issue #${ergaenzeIssue.number}: ` : '') + HILFE[m];
+    coordsBox.style.display = '';
+    coordsIssueLink.style.display = ergaenzeIssue ? '' : 'none';
+    if (ergaenzeIssue) coordsIssueLink.href = ergaenzeIssue.url;
+    aktualisiereCoordsText();
+  } else {
+    hilfe.textContent = HILFE[m];
+    aktionen.style.display = '';
+  }
   map.getContainer().style.cursor = 'crosshair';
   map.doubleClickZoom.disable();
 }
 
 function endeModus() {
-  modus = null; punkte = [];
+  modus = null; punkte = []; ergaenzeIssue = null;
   if (skizze) { map.removeLayer(skizze); skizze = null; }
-  document.querySelectorAll('#meldenButtons button').forEach(b => b.classList.remove('active'));
-  hilfe.textContent = 'Wähle Punkt, Linie oder Fläche und klicke in die Karte.';
+  document.querySelectorAll('button[data-mode]').forEach(b => b.classList.remove('active'));
+  hilfe.textContent = HILFE_LEER.melden;
+  coordsHilfe.textContent = HILFE_LEER.coords;
   aktionen.style.display = 'none';
+  coordsBox.style.display = 'none';
   btnErstellen.disabled = true;
   map.getContainer().style.cursor = '';
   map.doubleClickZoom.enable();
+}
+
+// Aus dem Popup: Punkte an ein bestehendes Issue anhängen
+function ergaenzen(nr) {
+  const issue = issues.find(i => i.number === nr);
+  if (!issue) return;
+  map.closePopup();
+  startModus('add', issue);
 }
 
 map.on('click', e => {
   if (!modus) return;
   if (modus === 'point') punkte = [e.latlng]; else punkte.push(e.latlng);
   if (skizze) map.removeLayer(skizze);
-  if (modus === 'point') skizze = L.circleMarker(punkte[0], { radius: 9, color: '#fff', weight: 2, fillColor: '#111', fillOpacity: .9 });
+  const marker = ll => L.circleMarker(ll, { radius: 9, color: '#fff', weight: 2, fillColor: '#111', fillOpacity: .9 });
+  if (modus === 'point') skizze = marker(punkte[0]);
   else if (modus === 'line') skizze = L.polyline(punkte, { color: '#111', weight: 4, dashArray: '4 6' });
-  else skizze = L.polygon(punkte, { color: '#111', weight: 3, dashArray: '4 6', fillOpacity: .15 });
+  else if (modus === 'polygon') skizze = L.polygon(punkte, { color: '#111', weight: 3, dashArray: '4 6', fillOpacity: .15 });
+  else skizze = L.featureGroup(punkte.map(marker));
   skizze.addTo(map);
   btnErstellen.disabled = !(modus === 'point' || (modus === 'line' && punkte.length >= 2) || (modus === 'polygon' && punkte.length >= 3));
+  if (modus === 'coords' || modus === 'add') aktualisiereCoordsText();
 });
 
+// GitHub rendert im Issue zuverlässig nur FeatureCollections, darum wird immer eine erzeugt;
+// mehrere Punkte als einzelne Point-Features statt MultiPoint.
+const rund = ll => [+ll.lng.toFixed(6), +ll.lat.toFixed(6)];
+const feature = geometry => ({ type: 'Feature', properties: {}, geometry });
+const punktFeature = ll => feature({ type: 'Point', coordinates: rund(ll) });
+const sammlung = features => ({ type: 'FeatureCollection', features });
+
 function aktuelleGeometrie() {
-  const r = ll => [+ll.lng.toFixed(6), +ll.lat.toFixed(6)];
-  if (modus === 'point') return { type: 'Point', coordinates: r(punkte[0]) };
-  if (modus === 'line') return { type: 'LineString', coordinates: punkte.map(r) };
-  const ring = punkte.map(r); ring.push(ring[0]);
-  return { type: 'Polygon', coordinates: [ring] };
+  if (modus === 'line') return sammlung([feature({ type: 'LineString', coordinates: punkte.map(rund) })]);
+  if (modus === 'polygon') { const ring = punkte.map(rund); ring.push(ring[0]); return sammlung([feature({ type: 'Polygon', coordinates: [ring] })]); }
+  return sammlung(punkte.map(punktFeature));
 }
+
+// Bestehende Geometrie eines Issues in eine flache Feature-Liste zerlegen (MultiPoint wird zu einzelnen Points).
+function alsFeatures(g) {
+  if (!g) return [];
+  if (g.type === 'FeatureCollection') return g.features.flatMap(alsFeatures);
+  if (g.type === 'Feature') return alsFeatures(g.geometry).map(f => ({ ...f, properties: g.properties || {} }));
+  if (g.type === 'GeometryCollection') return g.geometries.flatMap(alsFeatures);
+  if (g.type === 'MultiPoint') return g.coordinates.map(c => feature({ type: 'Point', coordinates: c }));
+  return [feature(g)];
+}
+
+function zusammenfuehren(bestand, neu) {
+  return sammlung([...alsFeatures(bestand), ...neu.map(punktFeature)]);
+}
+
+function aktualisiereCoordsText() {
+  if (modus === 'add') {
+    coordsText.value = JSON.stringify(zusammenfuehren(geometrie(ergaenzeIssue.body), punkte));
+    if (!punkte.length) coordsText.value += '\n\n(noch keine neuen Punkte, bisherige Geometrie)';
+  } else {
+    coordsText.value = punkte.length ? JSON.stringify(aktuelleGeometrie()) : '';
+  }
+}
+
+document.getElementById('btnKopieren').onclick = async () => {
+  const text = coordsText.value.split('\n\n(')[0];
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) { coordsText.select(); document.execCommand('copy'); }
+  const b = document.getElementById('btnKopieren');
+  b.textContent = 'Kopiert ✓'; setTimeout(() => b.textContent = 'Kopieren', 1500);
+};
 
 async function adresseFuer(latlng) {
   try {

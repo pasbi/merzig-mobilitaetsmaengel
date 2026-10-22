@@ -11,7 +11,12 @@ Alle Meldungen erscheinen auf der **[Karte](https://pasbi.github.io/merzig-mobil
 2. „Meldung auf GitHub erstellen“ öffnet das Formular mit vorausgefüllter Geometrie und Adresse.
 3. Art, Schwere und Beschreibung ausfüllen, Fotos per Drag & Drop einfügen, absenden.
 
-Ohne Karte geht es auch direkt über [„Mangel melden“](../../issues/new/choose); die Geometrie dann als GeoJSON eintragen, z. B. `{"type":"Point","coordinates":[6.6385,49.4435]}` (erst Länge, dann Breite).
+Gehört eine weitere Stelle zu einer bestehenden Meldung (z. B. dieselben zu engen Fahrradbügel an mehreren Orten), im Popup der Meldung „Punkte ergänzen“ wählen, die neuen Stellen anklicken, das angezeigte GeoJSON kopieren und im Issue den Block unter „Geometrie“ damit ersetzen (Issue öffnen → ··· → Edit).
+„Koordinaten abgreifen“ liefert das GeoJSON beliebiger Klicks ohne Bezug zu einer Meldung.
+
+Ohne Karte geht es auch direkt über [„Mangel melden“](../../issues/new/choose); die Geometrie dann als GeoJSON-`FeatureCollection` eintragen (erst Länge, dann Breite), z. B.
+`{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[6.6385,49.4435]}}]}`.
+Mehrere Stellen in einer Meldung sind einfach mehrere `Feature`-Einträge in der Liste; GitHubs eigene Kartenvorschau im Issue zeigt nackte Geometrien wie `MultiPoint` nicht an.
 
 ## Lebenszyklus einer Meldung
 
