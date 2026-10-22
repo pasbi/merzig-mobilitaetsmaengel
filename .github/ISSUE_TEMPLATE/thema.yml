@@ -15,6 +15,7 @@ body:
     attributes:
       label: Problem
       description: Worum geht es, warum betrifft es mehrere Stellen, wen behindert oder gefährdet es?
+      placeholder: Viele Einbahnstraßen sind nicht für den Radverkehr in Gegenrichtung freigegeben, das erzwingt Umwege über Hauptstraßen ...
     validations:
       required: true
 
@@ -23,6 +24,7 @@ body:
     attributes:
       label: Lösungsvorschlag
       description: Allgemeine Lösung samt Rechtsgrundlagen und Quellen. Die Sub-Issues verweisen hierauf und nennen nur noch die Besonderheiten der jeweiligen Stelle.
+      placeholder: Alle Einbahnstraßen prüfen und freigeben, wo die VwV-StVO zu § 45 es vorsieht ...
     validations:
       required: true
 

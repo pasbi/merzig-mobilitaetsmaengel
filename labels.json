@@ -1,6 +1,7 @@
 [
   { "name": "art: hindernis",              "color": "e85d04", "description": "Hindernis / Engstelle, z. B. Mast im Weg" },
   { "name": "art: schild",                 "color": "7b2cbf", "description": "Beschilderung falsch oder fehlend" },
+  { "name": "art: regelung",               "color": "00838f", "description": "Verkehrsregelung / Verkehrsführung: Einbahnstraße, Tempolimit, Vorfahrt, Ampelschaltung" },
   { "name": "art: belag",                  "color": "8d5524", "description": "Belag / Oberfläche" },
   { "name": "art: fehlende-infrastruktur", "color": "0a5fd6", "description": "Fehlende Infrastruktur" },
   { "name": "art: gefahr",                 "color": "d00000", "description": "Gefährliche Stelle" },

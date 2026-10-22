@@ -19,6 +19,7 @@ jobs:
             // Dropdown-Text (exakt wie in .github/ISSUE_TEMPLATE/mangel.yml) -> Label
             const ART = {
               'Beschilderung falsch oder fehlend':   'art: schild',
+              'Verkehrsregelung / Verkehrsführung':  'art: regelung',
               'Belag / Oberfläche':                  'art: belag',
               'Fehlende Infrastruktur':              'art: fehlende-infrastruktur',
               'Hindernis / Engstelle':               'art: hindernis',

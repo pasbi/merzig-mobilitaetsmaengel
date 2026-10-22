@@ -16,6 +16,7 @@ body:
       label: Art des Mangels
       options:
         - Beschilderung falsch oder fehlend
+        - Verkehrsregelung / Verkehrsführung
         - Belag / Oberfläche
         - Fehlende Infrastruktur
         - Hindernis / Engstelle
