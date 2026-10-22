@@ -11,7 +11,7 @@
   { "name": "schwere: mittel",  "color": "ffe082", "description": "behindert" },
   { "name": "schwere: hoch",    "color": "ef9a9a", "description": "gefährlich" },
 
-  { "name": "status: gemeldet",       "color": "ededed", "description": "Neu, noch nicht vor Ort geprüft" },
+  { "name": "status: unbestätigt",    "color": "ededed", "description": "Neu, noch nicht vor Ort geprüft" },
   { "name": "status: geprüft",        "color": "bbdefb", "description": "Vor Ort bestätigt" },
   { "name": "status: weitergegeben",  "color": "90caf9", "description": "An die zuständige Stelle weitergegeben" },
   { "name": "status: in-arbeit",      "color": "64b5f6", "description": "Die zuständige Stelle hat Maßnahmen angekündigt oder begonnen" },
@@ -26,7 +26,7 @@
   { "name": "zuständigkeit: privat",    "color": "d7ccc8", "description": "Privater Eigentümer oder Betreiber" },
   { "name": "zuständigkeit: unklar",    "color": "d7ccc8", "description": "Noch nicht geklärt" },
 
-  { "name": "thema: einbahnstraße",   "color": "e1bee7", "description": "Einbahnstraße für Radverkehr in Gegenrichtung freigeben" },
+  { "name": "thema: einbahnstraße", "color": "e1bee7", "description": "Einbahnstraße für Radverkehr in Gegenrichtung freigeben" },
 
-  { "name": "duplikat",               "color": "cfd8dc", "description": "Bereits gemeldet, siehe verlinktes Issue" }
+  { "name": "duplikat", "color": "cfd8dc", "description": "Bereits gemeldet, siehe verlinktes Issue" }
 ]

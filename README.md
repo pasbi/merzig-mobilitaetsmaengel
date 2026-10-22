@@ -24,7 +24,7 @@ Der Zustand wird über `status:`-Labels geführt, jedes Issue trägt genau eines
 
 | Label | Bedeutung |
 | --- | --- |
-| `status: gemeldet` | Neu eingegangen, noch nicht vor Ort geprüft (wird vom Formular gesetzt) |
+| `status: unbestätigt` | Neu eingegangen, noch nicht vor Ort geprüft (wird vom Formular gesetzt) |
 | `status: geprüft` | Von einer Person aus dem Team vor Ort bestätigt |
 | `status: weitergegeben` | An die zuständige Stelle weitergegeben (Datum, Empfänger und Kanal im Kommentar festhalten) |
 | `status: in-arbeit` | Die zuständige Stelle hat Maßnahmen angekündigt oder begonnen |

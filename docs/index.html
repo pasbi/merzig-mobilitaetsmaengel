@@ -244,7 +244,7 @@ function artVon(issue) {
 
 function statusVon(issue) {
   const l = issue.labels.find(n => n.startsWith('status:'));
-  return l ? l.slice(7).trim() : (issue.state === 'closed' ? 'geschlossen' : 'gemeldet');
+  return l ? l.slice(7).trim() : (issue.state === 'closed' ? 'geschlossen' : 'unbestätigt');
 }
 
 // ---------- Darstellung ----------
