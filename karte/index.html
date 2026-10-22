@@ -30,6 +30,26 @@
     --bg: #1a1a1c; --bg-2: #242427; --fg: #ececea; --fg-2: #a7a7a3;
     --line: #3a3a3e; --accent: #5aa0ff; --accent-fg: #0b1a2e;
   }
+  /* Dark-Mode: Kartenkacheln invertieren und Farbton zurückdrehen; Luftbild (nicht-invertieren) bleibt unverändert */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .leaflet-tile-pane .leaflet-layer:not(.nicht-invertieren) { filter: invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.7); }
+    :root:not([data-theme="light"]) .leaflet-container { background: #111; }
+  }
+  :root[data-theme="dark"] .leaflet-tile-pane .leaflet-layer:not(.nicht-invertieren) { filter: invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.7); }
+  :root[data-theme="dark"] .leaflet-container { background: #111; }
+  /* Leaflet-Bedienelemente und Popups im Dark-Mode */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .leaflet-bar a, :root:not([data-theme="light"]) .leaflet-control-layers,
+    :root:not([data-theme="light"]) .leaflet-popup-content-wrapper, :root:not([data-theme="light"]) .leaflet-popup-tip,
+    :root:not([data-theme="light"]) .leaflet-control-attribution { background: var(--bg-2); color: var(--fg); }
+    :root:not([data-theme="light"]) .leaflet-bar a { border-bottom-color: var(--line); }
+    :root:not([data-theme="light"]) .leaflet-control-layers-toggle { filter: invert(1); }
+  }
+  :root[data-theme="dark"] .leaflet-bar a, :root[data-theme="dark"] .leaflet-control-layers,
+  :root[data-theme="dark"] .leaflet-popup-content-wrapper, :root[data-theme="dark"] .leaflet-popup-tip,
+  :root[data-theme="dark"] .leaflet-control-attribution { background: var(--bg-2); color: var(--fg); }
+  :root[data-theme="dark"] .leaflet-bar a { border-bottom-color: var(--line); }
+  :root[data-theme="dark"] .leaflet-control-layers-toggle { filter: invert(1); }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body {
@@ -223,9 +243,29 @@ const GESCHLOSSEN_FARBE = '#9a9a9a';
 
 // ---------- Karte ----------
 const map = L.map('map').setView(CONFIG.center, CONFIG.zoom);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19, attribution: '© OpenStreetMap-Mitwirkende',
-}).addTo(map);
+
+// Kartenstile (alle aus OSM-Daten, serverseitig gerendert); der erste ist Standard.
+// Im Dark-Mode werden die Kacheln per CSS invertiert, außer bei Ebenen mit className 'nicht-invertieren' (Luftbild).
+const KARTEN = {
+  'CyclOSM': L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
+    maxZoom: 20, subdomains: 'abc',
+    attribution: '<a href="https://www.cyclosm.org">CyclOSM</a> · © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende',
+  }),
+  'OSM Standard': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende',
+  }),
+  'Luftbild': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19, className: 'nicht-invertieren',
+    attribution: 'Luftbild © <a href="https://www.esri.com">Esri</a>, Maxar, Earthstar Geographics, GIS User Community',
+  }),
+};
+let gewaehlteKarte = Object.keys(KARTEN)[0];
+try { const g = localStorage.getItem('kartenstil'); if (KARTEN[g]) gewaehlteKarte = g; } catch (e) {}
+KARTEN[gewaehlteKarte].addTo(map);
+L.control.layers(KARTEN, null, { position: 'topright' }).addTo(map);
+map.on('baselayerchange', e => { try { localStorage.setItem('kartenstil', e.name); } catch (err) {} });
+
 const issueLayer = L.featureGroup().addTo(map);
 document.getElementById('repoLink').href = `https://github.com/${CONFIG.owner}/${CONFIG.repo}`;
 
