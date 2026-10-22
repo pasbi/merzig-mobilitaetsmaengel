@@ -48,8 +48,10 @@ jobs:
               for (const s of subs) if (byNr[s.number]) { p.kinder.push(s.number); byNr[s.number].eltern = p.number; }
             }
             issues.forEach(i => delete i._sub);
+            const labelFarben = {};
+            roh.forEach(i => i.labels.forEach(l => { labelFarben[l.name] = l.color; }));
             const fs = require('fs');
-            fs.writeFileSync('karte/issues.json', JSON.stringify({ stand: new Date().toISOString(), issues }));
+            fs.writeFileSync('karte/issues.json', JSON.stringify({ stand: new Date().toISOString(), labelFarben, issues }));
             core.info(`${issues.length} Issues geschrieben`);
 
       - uses: actions/upload-pages-artifact@v3

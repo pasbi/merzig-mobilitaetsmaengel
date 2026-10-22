@@ -11,7 +11,7 @@ Alle Meldungen erscheinen auf der **[Karte](https://pasbi.github.io/merzig-mobil
 2. „Meldung auf GitHub erstellen“ öffnet das Formular mit vorausgefüllter Geometrie; die Straße steht als Vorschlag im Titel.
 3. Titel anpassen, Art, Schwere, Problem, optional Lösungsvorschlag und Standort ausfüllen, Fotos per Drag & Drop ins Problem-Feld ziehen, absenden.
 
-Gehört eine weitere Stelle zu einer bestehenden Meldung (z. B. dieselben zu engen Fahrradbügel an mehreren Orten), im Popup der Meldung „Punkte ergänzen“ wählen, die neuen Stellen anklicken, das angezeigte GeoJSON kopieren und im Issue den Block unter „Geometrie“ damit ersetzen (Issue öffnen → ··· → Edit).
+Gehört eine weitere Stelle zu einer bestehenden Meldung (z. B. dieselben zu engen Fahrradbügel an mehreren Orten), unter „Werkzeuge“ die Issue-Nummer eintragen und „ergänzen“ wählen, die neuen Stellen anklicken, das angezeigte GeoJSON kopieren und im Issue den Block unter „Geometrie“ damit ersetzen (Issue öffnen → ··· → Edit).
 „Koordinaten abgreifen“ liefert das GeoJSON beliebiger Klicks ohne Bezug zu einer Meldung.
 
 Ohne Karte geht es auch direkt über [„Mangel melden“](../../issues/new/choose); die Geometrie dann als GeoJSON-`FeatureCollection` eintragen (erst Länge, dann Breite), z. B.

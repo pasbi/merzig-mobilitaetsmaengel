@@ -85,6 +85,14 @@
   .leaflet-popup-content { font: 14px/1.4 system-ui, sans-serif; }
   .leaflet-popup-content .chips { display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0; }
   .chip { font-size: 11px; padding: 1px 7px; border-radius: 10px; background: #eee; color: #222; border: 1px solid #ccc; }
+  #toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); z-index: 2000;
+    background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 14px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.25); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+    max-width: calc(100vw - 32px);
+  }
+  #toast.sichtbar { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+  #toast a { color: inherit; font-weight: 600; margin-left: 6px; }
   /* Mobile Kopfleiste (nur auf schmalen Bildschirmen sichtbar) */
   header.mobil { display: none; }
   #btnSchliessen { display: none; }
@@ -169,10 +177,13 @@
 
   <details id="secCoords">
     <summary class="leise">Werkzeuge: Koordinaten, Punkte ergänzen</summary>
-    <div class="row">
+    <div class="row" style="align-items:center">
       <button data-mode="coords" id="btnCoords">Koordinaten abgreifen</button>
+      <span class="muted">oder Punkte zu #</span>
+      <input id="ergaenzeNr" type="number" min="1" style="width:5em; font:inherit; padding:5px; border-radius:6px; border:1px solid var(--line); background:var(--bg-2); color:var(--fg)">
+      <button id="btnErgaenzen">ergänzen</button>
     </div>
-    <p id="coordsHilfe" class="muted" style="margin-top:8px">Bestehende Meldung erweitern: im Popup der Meldung „Punkte ergänzen“ wählen. Hier nur rohe Koordinaten abgreifen.</p>
+    <p id="coordsHilfe" class="muted" style="margin-top:8px">Rohe Koordinaten abgreifen oder eine bestehende Meldung um Punkte erweitern.</p>
     <div id="coordsBox" style="display:none; margin-top:8px">
       <textarea id="coordsText" readonly rows="5" spellcheck="false"></textarea>
       <div class="row" style="margin-top:6px; align-items:center">
@@ -188,6 +199,7 @@
   <p class="muted">Daten: <a href="https://creativecommons.org/licenses/by/4.0/deed.de">CC BY 4.0</a> · Karte: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></p>
 </aside>
 <div id="map"></div>
+<div id="toast" role="status"></div>
 
 <script>
 // ---------- Konfiguration ----------
@@ -229,12 +241,14 @@ let ladeWarnung = '';
 // Lädt die Issues. Erste Wahl: issues.json, das die Pages-Action neben die Seite legt (keine API-Anfragen,
 // kein Limit). Fehlt die Datei (lokale Entwicklung), direkt von der GitHub-API.
 let datenStand = null;
+let labelFarben = {}; // Label-Name -> Hexfarbe ohne '#'
 async function ladeIssues(force) {
   try {
     const r = await fetch('issues.json', { cache: force ? 'reload' : 'default' });
     if (r.ok) {
       const j = await r.json();
       datenStand = j.stand;
+      labelFarben = j.labelFarben || {};
       return j.issues;
     }
   } catch (e) {}
@@ -251,9 +265,9 @@ async function ladeIssuesVonApi(force) {
   if (cache && cache.etag && !force) headers['If-None-Match'] = cache.etag;
 
   const r1 = await fetch(url(1), { headers });
-  if (r1.status === 304 && cache) return cache.data;
+  if (r1.status === 304 && cache) { labelFarben = cache.labelFarben || {}; return cache.data; }
   if (!r1.ok) {
-    if (cache) return cache.data; // z. B. Limit erreicht: lieber alte Daten als keine
+    if (cache) { labelFarben = cache.labelFarben || {}; return cache.data; } // z. B. Limit erreicht: lieber alte Daten als keine
     throw new Error(`GitHub-API: ${r1.status} ${r1.statusText}`);
   }
   const etag = r1.headers.get('ETag');
@@ -286,7 +300,9 @@ async function ladeIssuesVonApi(force) {
     } catch (e) { ladeWarnung = `Sub-Issues von #${p.number} nicht ladbar (${e.message}).`; }
   }
   data.forEach(i => delete i._subTotal);
-  try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), etag, data })); } catch (e) {}
+  labelFarben = {};
+  all.forEach(i => i.labels.forEach(l => { labelFarben[l.name] = l.color; }));
+  try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), etag, data, labelFarben })); } catch (e) {}
   return data;
 }
 
@@ -373,9 +389,11 @@ function zeichne() {
       layer.bindPopup(popup(issue, art));
       layer.addTo(issueLayer);
       li.onclick = () => { if (istMobil()) panelSchliessen(); map.fitBounds(layer.getBounds().pad(0.5), { maxZoom: 18 }); layer.openPopup(); };
+    } else if (!geo) {
+      li.title += ' · ohne Ort auf der Karte';
+      li.onclick = () => toast(`#${issue.number} hat keinen Ort auf der Karte.`, issue.url);
     } else {
-      li.title += geo ? '' : ' · ohne Ort auf der Karte';
-      li.onclick = () => window.open(issue.url);
+      li.onclick = () => toast(`#${issue.number} ist vom Filter ausgeblendet.`, issue.url);
     }
 
     const kinder = issue.kinder.map(k => byNr[k]).filter(k => k && sichtbar(k));
@@ -405,17 +423,35 @@ function zeichne() {
 }
 
 function popup(issue, art) {
-  const chips = issue.labels.map(l => `<span class="chip">${esc(l)}</span>`).join('');
+  const chips = issue.labels.map(chip).join('');
   // Neuer Feldname "Standort", alter "Ort (Adresse oder Beschreibung)" (Issues #1-#3)
   const adresse = feld(issue.body, 'Standort') || feld(issue.body, 'Ort (Adresse oder Beschreibung)');
   return `<strong><a href="${issue.url}" target="_blank" rel="noopener">#${issue.number} ${esc(issue.title)}</a></strong>
     <div class="muted" style="font-size:12px">${ARTEN[art].name} · ${issue.state === 'open' ? 'offen' : 'erledigt'} · Status: ${esc(statusVon(issue))}</div>
     ${adresse ? `<div>${esc(adresse).replace(/\n+/g, '<br>')}</div>` : ''}
-    <div class="chips">${chips}</div>
-    <button onclick="ergaenzen(${issue.number})">Punkte ergänzen</button>`;
+    <div class="chips">${chips}</div>`;
 }
 
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+// Kurze Einblendung unten auf der Karte, optional mit Link zum Issue
+let toastTimer = null;
+function toast(text, url) {
+  const t = document.getElementById('toast');
+  t.innerHTML = esc(text) + (url ? ` <a href="${url}" target="_blank" rel="noopener">Auf GitHub öffnen ↗</a>` : '');
+  t.classList.add('sichtbar');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('sichtbar'), 5000);
+}
+
+// Label-Chip in der Farbe aus GitHub (labelFarben), Textfarbe nach Helligkeit
+function chip(name) {
+  const hex = labelFarben[name];
+  if (!hex) return `<span class="chip">${esc(name)}</span>`;
+  const [r, g, b] = [0, 2, 4].map(i => parseInt(hex.slice(i, i + 2), 16));
+  const hell = (r * 299 + g * 587 + b * 114) / 1000 > 150;
+  return `<span class="chip" style="background:#${hex};color:${hell ? '#111' : '#fff'};border-color:transparent">${esc(name)}</span>`;
+}
 
 // Filter-UI aufbauen
 const af = document.getElementById('artFilter');
@@ -497,7 +533,7 @@ const HILFE = {
 const HILFE_BEARBEITEN = ' Punkt ziehen = verschieben, Klick = entfernen, Zwischenpunkt ziehen = einfügen.';
 const HILFE_LEER = {
   melden: 'Wähle Punkt, Linie oder Fläche und klicke in die Karte.',
-  coords: 'Bestehende Meldung erweitern: im Popup der Meldung „Punkte ergänzen“ wählen. Hier nur rohe Koordinaten abgreifen.',
+  coords: 'Rohe Koordinaten abgreifen oder eine bestehende Meldung um Punkte erweitern.',
 };
 
 document.querySelectorAll('#meldenButtons button, #btnCoords').forEach(b => b.onclick = () => startModus(b.dataset.mode));
@@ -545,10 +581,11 @@ function endeModus() {
 // Aus dem Popup: Punkte an ein bestehendes Issue anhängen
 function ergaenzen(nr) {
   const issue = issues.find(i => i.number === nr);
-  if (!issue) return;
+  if (!issue) { toast(`Meldung #${nr} nicht gefunden.`); return; }
   map.closePopup();
   startModus('add', issue);
 }
+document.getElementById('btnErgaenzen').onclick = () => ergaenzen(+document.getElementById('ergaenzeNr').value);
 
 map.on('click', e => {
   if (!modus) return;
