@@ -84,7 +84,8 @@
   .vtx.mid:hover { opacity: 1; }
   .leaflet-popup-content { font: 14px/1.4 system-ui, sans-serif; }
   .leaflet-popup-content .chips { display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0; }
-  .chip { font-size: 11px; padding: 1px 7px; border-radius: 10px; background: #eee; color: #222; border: 1px solid #ccc; }
+  .chip { font-size: 11px; padding: 1px 7px; border-radius: 10px; background: #eee; color: #222; border: 1px solid #ccc; text-decoration: none; }
+  a.chip:hover { filter: brightness(.9); }
   #toast {
     position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); z-index: 2000;
     background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 14px;
@@ -176,20 +177,16 @@
   </details>
 
   <details id="secCoords">
-    <summary class="leise">Werkzeuge: Koordinaten, Punkte ergänzen</summary>
+    <summary class="leise">Werkzeuge: Koordinaten abgreifen</summary>
     <div class="row" style="align-items:center">
       <button data-mode="coords" id="btnCoords">Koordinaten abgreifen</button>
-      <span class="muted">oder Punkte zu #</span>
-      <input id="ergaenzeNr" type="number" min="1" style="width:5em; font:inherit; padding:5px; border-radius:6px; border:1px solid var(--line); background:var(--bg-2); color:var(--fg)">
-      <button id="btnErgaenzen">ergänzen</button>
     </div>
-    <p id="coordsHilfe" class="muted" style="margin-top:8px">Rohe Koordinaten abgreifen oder eine bestehende Meldung um Punkte erweitern.</p>
+    <p id="coordsHilfe" class="muted" style="margin-top:8px">Stellen anklicken, GeoJSON kopieren und z. B. im Geometrie-Block einer Meldung einfügen.</p>
     <div id="coordsBox" style="display:none; margin-top:8px">
       <textarea id="coordsText" readonly rows="5" spellcheck="false"></textarea>
       <div class="row" style="margin-top:6px; align-items:center">
         <button class="primary" id="btnKopieren">Kopieren</button>
         <button class="btnZurueck" disabled>Letzten Punkt entfernen</button>
-        <a id="coordsIssueLink" href="#" target="_blank" rel="noopener" style="display:none">Issue bearbeiten ↗</a>
         <button id="btnCoordsEnde">Fertig</button>
       </div>
     </div>
@@ -445,12 +442,17 @@ function toast(text, url) {
 }
 
 // Label-Chip in der Farbe aus GitHub (labelFarben), Textfarbe nach Helligkeit
+// Klick öffnet die Issue-Liste auf GitHub, nach diesem Label gefiltert
 function chip(name) {
+  const url = `https://github.com/${CONFIG.owner}/${CONFIG.repo}/issues?q=${encodeURIComponent(`is:issue label:"${name}"`)}`;
   const hex = labelFarben[name];
-  if (!hex) return `<span class="chip">${esc(name)}</span>`;
-  const [r, g, b] = [0, 2, 4].map(i => parseInt(hex.slice(i, i + 2), 16));
-  const hell = (r * 299 + g * 587 + b * 114) / 1000 > 150;
-  return `<span class="chip" style="background:#${hex};color:${hell ? '#111' : '#fff'};border-color:transparent">${esc(name)}</span>`;
+  let stil = '';
+  if (hex) {
+    const [r, g, b] = [0, 2, 4].map(i => parseInt(hex.slice(i, i + 2), 16));
+    const hell = (r * 299 + g * 587 + b * 114) / 1000 > 150;
+    stil = ` style="background:#${hex};color:${hell ? '#111' : '#fff'};border-color:transparent"`;
+  }
+  return `<a class="chip" href="${url}" target="_blank" rel="noopener" title="Alle Issues mit diesem Label auf GitHub"${stil}>${esc(name)}</a>`;
 }
 
 // Filter-UI aufbauen
@@ -514,46 +516,42 @@ map.on('click', () => { if (istMobil() && !modus) panelSchliessen(); });
 start(false);
 
 // ---------- Mangel melden ----------
-// Modi: point/line/polygon = neue Meldung; coords = Koordinaten sammeln; add = Punkte an bestehendes Issue anhängen
-let modus = null, punkte = [], skizze = null, ergaenzeIssue = null;
+// Modi: point/line/polygon = neue Meldung; coords = Koordinaten sammeln
+let modus = null, punkte = [], skizze = null;
 const hilfe = document.getElementById('meldenHilfe');
 const aktionen = document.getElementById('meldenAktionen');
 const btnErstellen = document.getElementById('btnErstellen');
 const coordsHilfe = document.getElementById('coordsHilfe');
 const coordsBox = document.getElementById('coordsBox');
 const coordsText = document.getElementById('coordsText');
-const coordsIssueLink = document.getElementById('coordsIssueLink');
 const HILFE = {
   point: 'Klicke auf die Stelle des Mangels. Weitere Klicks fügen weitere Stellen zur selben Meldung hinzu.',
   line: 'Klicke die Punkte entlang des Abschnitts, dann „Meldung erstellen“.',
   polygon: 'Klicke die Eckpunkte der Fläche (mindestens 3), dann „Meldung erstellen“.',
   coords: 'Klicke eine oder mehrere Stellen; unten erscheint das GeoJSON zum Kopieren.',
-  add: 'Klicke die neuen Stellen. Unten steht die Geometrie des Issues inklusive der neuen Punkte: kopieren, dann im Issue den Block unter „Geometrie“ ersetzen (Issue öffnen → ··· → Edit).',
 };
 const HILFE_BEARBEITEN = ' Punkt ziehen = verschieben, Klick = entfernen, Zwischenpunkt ziehen = einfügen.';
 const HILFE_LEER = {
   melden: 'Wähle Punkt, Linie oder Fläche und klicke in die Karte.',
-  coords: 'Rohe Koordinaten abgreifen oder eine bestehende Meldung um Punkte erweitern.',
+  coords: 'Stellen anklicken, GeoJSON kopieren und z. B. im Geometrie-Block einer Meldung einfügen.',
 };
 
 document.querySelectorAll('#meldenButtons button, #btnCoords').forEach(b => b.onclick = () => startModus(b.dataset.mode));
 document.getElementById('btnAbbrechen').onclick = endeModus;
 document.getElementById('btnCoordsEnde').onclick = endeModus;
 
-function startModus(m, issue) {
+function startModus(m) {
   endeModus();
-  modus = m; ergaenzeIssue = issue || null;
+  modus = m;
   document.body.classList.add('imModus');
   panelSchliessen(); // mobil: nur der aktive Abschnitt bleibt als Leiste unten sichtbar
   if (istMobil()) document.querySelectorAll('aside details').forEach(d => d.open = false);
-  const btn = document.querySelector(`button[data-mode=${m === 'add' ? 'coords' : m}]`);
+  const btn = document.querySelector(`button[data-mode=${m}]`);
   if (btn) btn.classList.add('active');
-  if (m === 'coords' || m === 'add') {
+  if (m === 'coords') {
     document.getElementById('secCoords').open = true;
-    coordsHilfe.textContent = (ergaenzeIssue ? `Issue #${ergaenzeIssue.number}: ` : '') + HILFE[m] + HILFE_BEARBEITEN;
+    coordsHilfe.textContent = HILFE[m] + HILFE_BEARBEITEN;
     coordsBox.style.display = '';
-    coordsIssueLink.style.display = ergaenzeIssue ? '' : 'none';
-    if (ergaenzeIssue) coordsIssueLink.href = ergaenzeIssue.url;
     aktualisiereCoordsText();
   } else {
     document.getElementById('secMelden').open = true;
@@ -565,7 +563,7 @@ function startModus(m, issue) {
 }
 
 function endeModus() {
-  modus = null; punkte = []; ergaenzeIssue = null;
+  modus = null; punkte = [];
   document.body.classList.remove('imModus');
   if (skizze) { map.removeLayer(skizze); skizze = null; }
   document.querySelectorAll('button[data-mode]').forEach(b => b.classList.remove('active'));
@@ -578,14 +576,6 @@ function endeModus() {
   map.doubleClickZoom.enable();
 }
 
-// Aus dem Popup: Punkte an ein bestehendes Issue anhängen
-function ergaenzen(nr) {
-  const issue = issues.find(i => i.number === nr);
-  if (!issue) { toast(`Meldung #${nr} nicht gefunden.`); return; }
-  map.closePopup();
-  startModus('add', issue);
-}
-document.getElementById('btnErgaenzen').onclick = () => ergaenzen(+document.getElementById('ergaenzeNr').value);
 
 map.on('click', e => {
   if (!modus) return;
@@ -638,7 +628,7 @@ function zeichneSkizze() {
 
   btnErstellen.disabled = !((modus === 'point' && punkte.length >= 1) || (modus === 'line' && punkte.length >= 2) || (modus === 'polygon' && punkte.length >= 3));
   document.querySelectorAll('.btnZurueck').forEach(b => b.disabled = !punkte.length);
-  if (modus === 'coords' || modus === 'add') aktualisiereCoordsText();
+  if (modus === 'coords') aktualisiereCoordsText();
 }
 
 document.querySelectorAll('.btnZurueck').forEach(b => b.onclick = () => { punkte.pop(); zeichneSkizze(); });
@@ -656,31 +646,12 @@ function aktuelleGeometrie() {
   return sammlung(punkte.map(punktFeature));
 }
 
-// Bestehende Geometrie eines Issues in eine flache Feature-Liste zerlegen (MultiPoint wird zu einzelnen Points).
-function alsFeatures(g) {
-  if (!g) return [];
-  if (g.type === 'FeatureCollection') return g.features.flatMap(alsFeatures);
-  if (g.type === 'Feature') return alsFeatures(g.geometry).map(f => ({ ...f, properties: g.properties || {} }));
-  if (g.type === 'GeometryCollection') return g.geometries.flatMap(alsFeatures);
-  if (g.type === 'MultiPoint') return g.coordinates.map(c => feature({ type: 'Point', coordinates: c }));
-  return [feature(g)];
-}
-
-function zusammenfuehren(bestand, neu) {
-  return sammlung([...alsFeatures(bestand), ...neu.map(punktFeature)]);
-}
-
 function aktualisiereCoordsText() {
-  if (modus === 'add') {
-    coordsText.value = JSON.stringify(zusammenfuehren(geometrie(ergaenzeIssue.body), punkte));
-    if (!punkte.length) coordsText.value += '\n\n(noch keine neuen Punkte, bisherige Geometrie)';
-  } else {
-    coordsText.value = punkte.length ? JSON.stringify(aktuelleGeometrie()) : '';
-  }
+  coordsText.value = punkte.length ? JSON.stringify(aktuelleGeometrie()) : '';
 }
 
 document.getElementById('btnKopieren').onclick = async () => {
-  const text = coordsText.value.split('\n\n(')[0];
+  const text = coordsText.value;
   try { await navigator.clipboard.writeText(text); }
   catch (e) { coordsText.select(); document.execCommand('copy'); }
   const b = document.getElementById('btnKopieren');
