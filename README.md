@@ -11,8 +11,7 @@ Alle Meldungen erscheinen auf der **[Karte](https://pasbi.github.io/merzig-mobil
 2. „Meldung auf GitHub erstellen“ öffnet das Formular mit vorausgefüllter Geometrie; die Straße steht als Vorschlag im Titel.
 3. Titel anpassen, Art, Schwere, Problem, optional Lösungsvorschlag und Standort ausfüllen, Fotos per Drag & Drop ins Problem-Feld ziehen, absenden.
 
-Gehört eine weitere Stelle zu einer bestehenden Meldung (z. B. dieselben zu engen Fahrradbügel an mehreren Orten), unter „Werkzeuge“ die Issue-Nummer eintragen und „ergänzen“ wählen, die neuen Stellen anklicken, das angezeigte GeoJSON kopieren und im Issue den Block unter „Geometrie“ damit ersetzen (Issue öffnen → ··· → Edit).
-„Koordinaten abgreifen“ liefert das GeoJSON beliebiger Klicks ohne Bezug zu einer Meldung.
+Gehört eine weitere Stelle zu einer bestehenden Meldung (z. B. dieselben zu engen Fahrradbügel an mehreren Orten), unter „Werkzeuge“ → „Koordinaten abgreifen“ die Stellen anklicken, das GeoJSON kopieren und die `Feature`-Einträge im Issue in die Liste unter „Geometrie“ einfügen (Issue öffnen → ··· → Edit).
 
 Ohne Karte geht es auch direkt über [„Mangel melden“](../../issues/new/choose); die Geometrie dann als GeoJSON-`FeatureCollection` eintragen (erst Länge, dann Breite), z. B.
 `{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[6.6385,49.4435]}}]}`.
@@ -43,7 +42,7 @@ Weitere Label-Gruppen:
 - `duplikat` – bereits gemeldet, im Kommentar das ursprüngliche Issue verlinken und schließen.
 
 Beim Prüfen einer neuen Meldung bitte `art:` und `schwere:` passend zu den Angaben im Formular setzen und die Zuständigkeit eintragen, sobald sie bekannt ist.
-Die vollständige Liste steht in [`labels.json`](labels.json), technische Hinweise in [`EINRICHTUNG.md`](EINRICHTUNG.md).
+Die vollständige Liste steht in [`labels.json`](labels.json), technische Hinweise in [`AGENTS.md`](AGENTS.md).
 
 ## Lizenz
 

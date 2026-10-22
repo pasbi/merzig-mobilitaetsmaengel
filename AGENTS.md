@@ -5,8 +5,19 @@
 Sammlung von Mängeln an der Rad-, Fuß- und Verkehrsinfrastruktur in Merzig.
 Jeder Mangel ist ein GitHub-Issue mit GeoJSON-Geometrie; `karte/index.html` zeigt alle Issues auf einer Karte.
 Die Action `.github/workflows/pages.yml` erzeugt `karte/issues.json` aus den Issues und veröffentlicht `karte/` als GitHub Pages (Source „GitHub Actions“, keine Commits); die Seite fällt ohne `issues.json` auf die GitHub-API zurück.
-Das Datenformat von `issues.json` (`{stand, issues:[{number,title,state,url,labels,body,updated,kinder,eltern}]}`) muss mit `ladeIssuesVonApi()` in `index.html` übereinstimmen.
+Das Datenformat von `issues.json` (`{stand, labelFarben:{name:hex}, issues:[{number,title,state,url,labels,body,updated,kinder,eltern}]}`) muss mit `ladeIssuesVonApi()` in `index.html` übereinstimmen.
 Keine Build-Schritte, keine Abhängigkeiten außer Leaflet per CDN.
+
+## Betrieb
+
+- Nach Änderungen an `labels.json`: `scripts/labels-anlegen.sh` ausführen (braucht `gh` und `jq`); es legt an und überschreibt, löscht aber nie.
+  Umbenennen zuerst auf GitHub (nimmt die Issues mit), dann `labels.json` nachziehen.
+- Die Pages-Action läuft bei Issue-Ereignissen, bei Push nach `karte/` und stündlich.
+  Sub-Issue-Verknüpfungen lösen kein Ereignis aus; sofort sichtbar werden sie über *Actions → Pages → Run workflow*.
+- Die Action `labels-aus-formular.yml` setzt `art:` und `schwere:` aus den Dropdowns beim Anlegen; beim Bearbeiten ergänzt sie nur fehlende Gruppen.
+- Lokal ansehen: `python -m http.server -d karte 8000`; ohne `issues.json` liest die Seite direkt von der GitHub-API (60 Anfragen/Stunde, ETag-Abgleich, eine Anfrage je Eltern-Issue).
+  `file://` geht nicht, der OSM-Kachelserver verlangt einen Referer.
+- Beim Melden fragt die Seite die Straße per Nominatim ab und befüllt nur Titel und Geometrie vor.
 
 ## Sprache
 
@@ -14,7 +25,7 @@ Alles auf Deutsch: Dateien, Kommentare, Labels, Issues, Commit-Nachrichten, Antw
 Ausnahme: Dateinamen und Code-Bezeichner ohne Umlaute; Labels dürfen Umlaute enthalten (`status: geprüft`).
 Prosa in Markdown: nach jedem Satzende ein Zeilenumbruch, ein Satz pro Zeile, keine Leerzeile zwischen den Sätzen eines Absatzes, kein Umbruch innerhalb eines Satzes.
 Gilt für alle Markdown-Dateien, Issue-Texte und Kommentare; nicht für Code, Tabellen, Überschriften und kurze Listenpunkte.
-Das `README.md` richtet sich an Meldende und Mitwirkende; technische Einrichtung und Betrieb gehören in `EINRICHTUNG.md`.
+Das `README.md` richtet sich an Meldende und Mitwirkende; Technik und Betrieb gehören hierher, nicht ins README.
 
 ## Datenmodell
 
@@ -44,8 +55,8 @@ Eine neue Kategorie oder Schwere muss an allen vier Stellen eingetragen werden:
 3. `karte/index.html`, Objekt `ARTEN` (Schlüssel = Label-Suffix, `form` = exakter Dropdown-Text, `farbe` = Hexfarbe wie in `labels.json`)
 4. `.github/workflows/labels-aus-formular.yml`, Tabellen `ART` und `SCHWERE` (Dropdown-Text → Label)
 
-Die Action setzt beim Anlegen eines Issues `art:` und `schwere:` aus den Dropdowns; beim Bearbeiten ergänzt sie nur fehlende Gruppen.
 Labels sind die Wahrheit, die Dropdowns nur die Eingabe.
+Neue Status-, Zuständigkeits- oder Themen-Labels brauchen nur `labels.json` und die Tabelle im `README.md`.
 
 Repo-Name, Kartenmitte und Zoom stehen in `karte/index.html` unter `CONFIG`.
 
