@@ -1,0 +1,67 @@
+# Baut karte/ plus issues.json und veröffentlicht beides als GitHub Pages.
+# Läuft bei jeder Issue-Änderung, bei Push auf main und stündlich als Sicherheitsnetz.
+# Voraussetzung: Settings → Pages → Source: "GitHub Actions".
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths: [karte/**]
+  issues:
+    types: [opened, edited, deleted, closed, reopened, labeled, unlabeled, transferred]
+  # Sub-Issue-Verknüpfungen lösen kein Issue-Ereignis aus; dafür der Stundenlauf (oder "Run workflow" von Hand).
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: issues.json erzeugen
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const roh = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'all', per_page: 100 });
+            const issues = roh.filter(i => !i.pull_request).map(i => ({
+              number: i.number, title: i.title, state: i.state, url: i.html_url,
+              labels: i.labels.map(l => l.name), body: i.body || '',
+              updated: i.updated_at, kinder: [], eltern: null,
+              _sub: (i.sub_issues_summary && i.sub_issues_summary.total) || 0,
+            }));
+            const byNr = Object.fromEntries(issues.map(i => [i.number, i]));
+            for (const p of issues.filter(i => i._sub > 0)) {
+              const subs = await github.paginate('GET /repos/{owner}/{repo}/issues/{issue_number}/sub_issues', { owner, repo, issue_number: p.number, per_page: 100 });
+              for (const s of subs) if (byNr[s.number]) { p.kinder.push(s.number); byNr[s.number].eltern = p.number; }
+            }
+            issues.forEach(i => delete i._sub);
+            const fs = require('fs');
+            fs.writeFileSync('karte/issues.json', JSON.stringify({ stand: new Date().toISOString(), issues }));
+            core.info(`${issues.length} Issues geschrieben`);
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: karte
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

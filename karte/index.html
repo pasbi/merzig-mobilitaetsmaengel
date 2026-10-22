@@ -191,7 +191,23 @@ let ladeWarnung = '';
 
 // Lädt alle Issues. Seite 1 wird mit dem gespeicherten ETag angefragt: antwortet GitHub mit 304,
 // hat sich nichts geändert, der Cache wird genutzt und die Anfrage zählt nicht gegen das API-Limit.
+// Lädt die Issues. Erste Wahl: issues.json, das die Pages-Action neben die Seite legt (keine API-Anfragen,
+// kein Limit). Fehlt die Datei (lokale Entwicklung), direkt von der GitHub-API.
+let datenStand = null;
 async function ladeIssues(force) {
+  try {
+    const r = await fetch('issues.json', { cache: force ? 'reload' : 'default' });
+    if (r.ok) {
+      const j = await r.json();
+      datenStand = j.stand;
+      return j.issues;
+    }
+  } catch (e) {}
+  datenStand = null;
+  return ladeIssuesVonApi(force);
+}
+
+async function ladeIssuesVonApi(force) {
   const key = `issues:v2:${CONFIG.owner}/${CONFIG.repo}`; // v2: mit kinder/eltern
   let cache = null;
   try { cache = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) {}
@@ -341,7 +357,10 @@ function zeichne() {
 
   document.getElementById('anzahl').textContent = `(${n}${n < issues.length ? ` von ${issues.length}` : ''})`;
   const s = document.getElementById('status');
-  s.className = ladeWarnung ? 'err' : ''; s.textContent = ladeWarnung;
+  s.className = ladeWarnung ? 'err' : '';
+  s.textContent = ladeWarnung || (datenStand
+    ? `Stand: ${new Date(datenStand).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}`
+    : 'Live von der GitHub-API');
   // Zusammenfassung im zugeklappten Filter-Abschnitt
   const aktiv = [];
   if (st !== 'open') aktiv.push(st === 'all' ? 'alle' : 'erledigt');

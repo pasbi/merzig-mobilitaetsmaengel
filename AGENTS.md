@@ -3,7 +3,9 @@
 ## Projekt
 
 Sammlung von Mängeln an der Rad-, Fuß- und Verkehrsinfrastruktur in Merzig.
-Jeder Mangel ist ein GitHub-Issue mit GeoJSON-Geometrie; `docs/index.html` zeigt alle Issues auf einer Karte (GitHub Pages, Branch `main`, Ordner `/docs`).
+Jeder Mangel ist ein GitHub-Issue mit GeoJSON-Geometrie; `karte/index.html` zeigt alle Issues auf einer Karte.
+Die Action `.github/workflows/pages.yml` erzeugt `karte/issues.json` aus den Issues und veröffentlicht `karte/` als GitHub Pages (Source „GitHub Actions“, keine Commits); die Seite fällt ohne `issues.json` auf die GitHub-API zurück.
+Das Datenformat von `issues.json` (`{stand, issues:[{number,title,state,url,labels,body,updated,kinder,eltern}]}`) muss mit `ladeIssuesVonApi()` in `index.html` übereinstimmen.
 Keine Build-Schritte, keine Abhängigkeiten außer Leaflet per CDN.
 
 ## Sprache
@@ -19,7 +21,7 @@ Das `README.md` richtet sich an Meldende und Mitwirkende; technische Einrichtung
 - Geometrie steht im Issue-Body als ```` ```geojson ```` -Block, Koordinaten in Länge/Breite-Reihenfolge.
   Die Karte liest jede Form (nackte Geometrie, Feature, FeatureCollection, GeometryCollection), erzeugt selbst aber immer eine FeatureCollection aus einzelnen Features, weil GitHubs Vorschau im Issue nackte Geometrien nicht rendert.
   Mehrere Punkte als mehrere Point-Features, nicht als MultiPoint.
-- Formularfelder werden von GitHub als `### Feldname\n\nWert` gerendert; `docs/index.html` liest sie mit `feld(body, label)`.
+- Formularfelder werden von GitHub als `### Feldname\n\nWert` gerendert; `karte/index.html` liest sie mit `feld(body, label)`.
   Feldnamen im Formular nicht umbenennen, ohne den Parser anzupassen (er kennt für den Standort den alten Namen „Ort (Adresse oder Beschreibung)“ und den neuen „Standort“).
 - Formularfelder: Art, Schwere, Problem, Lösungsvorschlag (optional), Standort (Adresse, Bereich oder Liste mit einer Zeile je Stelle in der Reihenfolge der Geometrie-Punkte), Geometrie, Lizenz-Checkboxen.
 - Labels: genau eines aus `art: …` (Farbe auf der Karte), `schwere: …` und `status: …`; null bis mehrere aus `zuständigkeit: …` (Stadt, Landkreis, Land, Bund, privat, unklar; geteilte Zuständigkeit ist normal); optional `thema: …` für Bündel mehrerer Issues (die Karte baut daraus automatisch einen Filter, keine Pflege in `ARTEN` nötig); dazu `duplikat`.
@@ -39,18 +41,18 @@ Eine neue Kategorie oder Schwere muss an allen vier Stellen eingetragen werden:
 
 1. `.github/ISSUE_TEMPLATE/mangel.yml` (Dropdown-Text)
 2. `labels.json` (Label-Name und Farbe)
-3. `docs/index.html`, Objekt `ARTEN` (Schlüssel = Label-Suffix, `form` = exakter Dropdown-Text, `farbe` = Hexfarbe wie in `labels.json`)
+3. `karte/index.html`, Objekt `ARTEN` (Schlüssel = Label-Suffix, `form` = exakter Dropdown-Text, `farbe` = Hexfarbe wie in `labels.json`)
 4. `.github/workflows/labels-aus-formular.yml`, Tabellen `ART` und `SCHWERE` (Dropdown-Text → Label)
 
 Die Action setzt beim Anlegen eines Issues `art:` und `schwere:` aus den Dropdowns; beim Bearbeiten ergänzt sie nur fehlende Gruppen.
 Labels sind die Wahrheit, die Dropdowns nur die Eingabe.
 
-Repo-Name, Kartenmitte und Zoom stehen in `docs/index.html` unter `CONFIG`.
+Repo-Name, Kartenmitte und Zoom stehen in `karte/index.html` unter `CONFIG`.
 
 ## Prüfen vor dem Abschluss
 
 - YAML und JSON valide (`python3 -c 'import yaml,json; …'` oder `yq`/`jq`).
-- JavaScript-Syntax: Script-Block aus `docs/index.html` extrahieren und `node --check` ausführen.
+- JavaScript-Syntax: Script-Block aus `karte/index.html` extrahieren und `node --check` ausführen.
 - Nach Änderungen am Parser: Beispiel-Body mit `feld()` und `geometrie()` durchlaufen lassen.
 
 ## Lizenz
