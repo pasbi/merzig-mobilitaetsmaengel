@@ -10,7 +10,8 @@ Keine Build-Schritte, keine Abhängigkeiten außer Leaflet per CDN.
 
 Alles auf Deutsch: Dateien, Kommentare, Labels, Issues, Commit-Nachrichten, Antworten.
 Ausnahme: Dateinamen und Code-Bezeichner ohne Umlaute; Labels dürfen Umlaute enthalten (`status: geprüft`).
-Prosa in Markdown: ein Satz pro Zeile.
+Prosa in Markdown: nach jedem Satzende ein Zeilenumbruch, ein Satz pro Zeile, keine Leerzeile zwischen den Sätzen eines Absatzes, kein Umbruch innerhalb eines Satzes.
+Gilt für alle Markdown-Dateien, Issue-Texte und Kommentare; nicht für Code, Tabellen, Überschriften und kurze Listenpunkte.
 Das `README.md` richtet sich an Meldende und Mitwirkende; technische Einrichtung und Betrieb gehören in `EINRICHTUNG.md`.
 
 ## Datenmodell
@@ -22,15 +23,25 @@ Das `README.md` richtet sich an Meldende und Mitwirkende; technische Einrichtung
   Feldnamen im Formular nicht umbenennen, ohne den Parser anzupassen.
 - Labels: genau eines aus `art: …` (Farbe auf der Karte), `schwere: …` und `status: …`; null bis mehrere aus `zuständigkeit: …` (Stadt, Landkreis, Land, Bund, privat, unklar; geteilte Zuständigkeit ist normal); dazu `duplikat`.
   Vollständige Liste und Bedeutung in `labels.json` und `README.md`.
-- Geschlossen wird ein Issue nur mit `status: behoben` oder `status: abgelehnt`.
+- Geschlossen wird ein Issue nur mit `status: behoben` oder `status: obsolet`.
+  `status: abgelehnt` bleibt offen: der Mangel besteht in der echten Welt weiter.
 
-## Drei Orte, die zusammenpassen müssen
+## Vorbefüllung des Issue-Formulars
 
-Eine neue Kategorie oder ein neuer Status muss an allen drei Stellen eingetragen werden:
+Die Karte befüllt nur `title` und das Feld `geometrie` über die URL.
+Andere Formularfelder nicht per URL vorbefüllen: GitHub setzt sie bei jeder Neudarstellung aus der URL zurück, sie sind dann nicht mehr editierbar.
+
+## Vier Orte, die zusammenpassen müssen
+
+Eine neue Kategorie oder Schwere muss an allen vier Stellen eingetragen werden:
 
 1. `.github/ISSUE_TEMPLATE/mangel.yml` (Dropdown-Text)
 2. `labels.json` (Label-Name und Farbe)
 3. `docs/index.html`, Objekt `ARTEN` (Schlüssel = Label-Suffix, `form` = exakter Dropdown-Text, `farbe` = Hexfarbe wie in `labels.json`)
+4. `.github/workflows/labels-aus-formular.yml`, Tabellen `ART` und `SCHWERE` (Dropdown-Text → Label)
+
+Die Action setzt beim Anlegen eines Issues `art:` und `schwere:` aus den Dropdowns; beim Bearbeiten ergänzt sie nur fehlende Gruppen.
+Labels sind die Wahrheit, die Dropdowns nur die Eingabe.
 
 Repo-Name, Kartenmitte und Zoom stehen in `docs/index.html` unter `CONFIG`.
 

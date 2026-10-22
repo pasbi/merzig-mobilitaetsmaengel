@@ -472,10 +472,11 @@ btnErstellen.onclick = async () => {
   const geo = aktuelleGeometrie();
   const mitte = punkte.length === 1 ? punkte[0] : skizze.getBounds().getCenter();
   const adresse = await adresseFuer(mitte);
+  // Nur Titel und Geometrie vorbefüllen: Formularfelder aus der URL setzt GitHub bei jeder
+  // Neudarstellung zurück, man könnte das Ort-Feld dann nicht mehr bearbeiten.
   const p = new URLSearchParams({
     template: CONFIG.template,
     title: `${adresse || '[Ort]'}: `,
-    adresse,
     geometrie: JSON.stringify(geo),
   });
   const url = `https://github.com/${CONFIG.owner}/${CONFIG.repo}/issues/new?${p}`;

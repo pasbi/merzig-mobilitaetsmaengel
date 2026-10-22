@@ -8,8 +8,8 @@ Alle Meldungen erscheinen auf der **[Karte](https://pasbi.github.io/merzig-mobil
 ## Mangel melden
 
 1. Auf der [Karte](https://pasbi.github.io/merzig-mobilitaetsmaengel/) „Punkt(e)“, „Linie“ oder „Fläche“ wählen und in die Karte klicken; bei „Punkt(e)“ fügt jeder weitere Klick eine weitere Stelle zur selben Meldung hinzu.
-2. „Meldung auf GitHub erstellen“ öffnet das Formular mit vorausgefüllter Geometrie und Adresse.
-3. Art, Schwere und Beschreibung ausfüllen, Fotos per Drag & Drop einfügen, absenden.
+2. „Meldung auf GitHub erstellen“ öffnet das Formular mit vorausgefüllter Geometrie; die Straße steht als Vorschlag im Titel.
+3. Titel anpassen, Art, Schwere, Beschreibung und Ort ausfüllen, Fotos per Drag & Drop einfügen, absenden.
 
 Gehört eine weitere Stelle zu einer bestehenden Meldung (z. B. dieselben zu engen Fahrradbügel an mehreren Orten), im Popup der Meldung „Punkte ergänzen“ wählen, die neuen Stellen anklicken, das angezeigte GeoJSON kopieren und im Issue den Block unter „Geometrie“ damit ersetzen (Issue öffnen → ··· → Edit).
 „Koordinaten abgreifen“ liefert das GeoJSON beliebiger Klicks ohne Bezug zu einer Meldung.
@@ -29,7 +29,8 @@ Der Zustand wird über `status:`-Labels geführt, jedes Issue trägt genau eines
 | `status: weitergegeben` | An die zuständige Stelle weitergegeben (Datum, Empfänger und Kanal im Kommentar festhalten) |
 | `status: in-arbeit` | Die zuständige Stelle hat Maßnahmen angekündigt oder begonnen |
 | `status: behoben` | Erledigt, Issue wird geschlossen |
-| `status: abgelehnt` | Wird nicht weiterverfolgt (Begründung im Kommentar), Issue wird geschlossen |
+| `status: abgelehnt` | Die zuständige Stelle lehnt ab (Begründung im Kommentar); der Mangel besteht weiter, das Issue bleibt offen |
+| `status: obsolet` | Durch veränderten Kontext irrelevant geworden (z. B. Umbau, Straße gesperrt), Issue wird geschlossen |
 
 Weitere Label-Gruppen:
 

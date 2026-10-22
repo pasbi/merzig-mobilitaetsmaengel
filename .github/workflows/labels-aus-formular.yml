@@ -1,0 +1,62 @@
+# Setzt beim Anlegen eines Issues die Labels "art:" und "schwere:" aus den Dropdown-Angaben des Formulars.
+# Beim Bearbeiten werden nur fehlende Gruppen ergänzt, damit Korrekturen des Teams nicht überschrieben werden.
+name: Labels aus Formular
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+jobs:
+  labels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            // Dropdown-Text (exakt wie in .github/ISSUE_TEMPLATE/mangel.yml) -> Label
+            const ART = {
+              'Laterne / Mast im Weg':               'art: laterne',
+              'Beschilderung falsch oder fehlend':   'art: schild',
+              'Belag / Oberfläche':                  'art: belag',
+              'Fehlende Infrastruktur':              'art: fehlende-infrastruktur',
+              'Hindernis / Engstelle':               'art: hindernis',
+              'Gefährliche Stelle':                  'art: gefahr',
+              'Sonstiges':                           'art: sonstiges',
+            };
+            const SCHWERE = {
+              'niedrig (ärgerlich)':  'schwere: niedrig',
+              'mittel (behindert)':   'schwere: mittel',
+              'hoch (gefährlich)':    'schwere: hoch',
+            };
+
+            const issue = context.payload.issue;
+            const body = issue.body || '';
+            const feld = label => {
+              const m = body.match(new RegExp('### ' + label + '\\s*\\n+([\\s\\S]*?)(?=\\n### |$)'));
+              return m ? m[1].trim() : '';
+            };
+            const vorhanden = issue.labels.map(l => l.name);
+            const gruppen = [
+              { prefix: 'art:',     neu: ART[feld('Art des Mangels')] },
+              { prefix: 'schwere:', neu: SCHWERE[feld('Schwere')] },
+            ];
+
+            const hinzu = [];
+            for (const g of gruppen) {
+              if (!g.neu) continue;
+              const hatGruppe = vorhanden.some(n => n.startsWith(g.prefix));
+              if (context.payload.action === 'edited' && hatGruppe) continue;
+              if (!vorhanden.includes(g.neu)) hinzu.push(g.neu);
+            }
+            if (hinzu.length) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number, labels: hinzu,
+              });
+              core.info('Labels gesetzt: ' + hinzu.join(', '));
+            } else {
+              core.info('Nichts zu tun.');
+            }

@@ -16,7 +16,8 @@
   { "name": "status: weitergegeben",  "color": "90caf9", "description": "An die zuständige Stelle weitergegeben" },
   { "name": "status: in-arbeit",      "color": "64b5f6", "description": "Die zuständige Stelle hat Maßnahmen angekündigt oder begonnen" },
   { "name": "status: behoben",        "color": "a5d6a7", "description": "Erledigt, Issue wird geschlossen" },
-  { "name": "status: abgelehnt",      "color": "bdbdbd", "description": "Wird nicht weiterverfolgt, Issue wird geschlossen" },
+  { "name": "status: abgelehnt",      "color": "ffcc80", "description": "Zuständige Stelle lehnt ab, Mangel besteht weiter, Issue bleibt offen" },
+  { "name": "status: obsolet",        "color": "bdbdbd", "description": "Durch veränderten Kontext irrelevant geworden, Issue wird geschlossen" },
 
   { "name": "zuständigkeit: stadt",     "color": "d7ccc8", "description": "Stadt Merzig" },
   { "name": "zuständigkeit: landkreis", "color": "d7ccc8", "description": "Landkreis Merzig-Wadern" },
