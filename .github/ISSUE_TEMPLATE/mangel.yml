@@ -1,0 +1,77 @@
+name: Mangel melden
+description: Einen Mangel an Rad-, Fuß- oder Verkehrsinfrastruktur in Merzig melden.
+title: "[Ort]: Kurze Beschreibung"
+labels:
+  - "status: gemeldet"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke fürs Melden!
+        Am einfachsten geht es über die [Karte](https://pasbi.github.io/merzig-mobilitaetsmaengel/): Ort anklicken, dann wird dieses Formular mit Koordinaten vorausgefüllt.
+
+  - type: dropdown
+    id: art
+    attributes:
+      label: Art des Mangels
+      options:
+        - Laterne / Mast im Weg
+        - Beschilderung falsch oder fehlend
+        - Belag / Oberfläche
+        - Fehlende Infrastruktur
+        - Hindernis / Engstelle
+        - Gefährliche Stelle
+        - Sonstiges
+    validations:
+      required: true
+
+  - type: dropdown
+    id: schwere
+    attributes:
+      label: Schwere
+      description: Wie stark behindert oder gefährdet der Mangel?
+      options:
+        - niedrig (ärgerlich)
+        - mittel (behindert)
+        - hoch (gefährlich)
+      default: 1
+    validations:
+      required: true
+
+  - type: textarea
+    id: beschreibung
+    attributes:
+      label: Beschreibung
+      description: Was ist das Problem, wen betrifft es, was wäre die Lösung? Fotos können per Drag & Drop eingefügt werden.
+      placeholder: Der Laternenmast steht mitten auf dem Radweg, nachts schlecht sichtbar ...
+    validations:
+      required: true
+
+  - type: input
+    id: adresse
+    attributes:
+      label: Ort (Adresse oder Beschreibung)
+      placeholder: Poststraße 12, vor der Bäckerei
+    validations:
+      required: true
+
+  - type: textarea
+    id: geometrie
+    attributes:
+      label: Geometrie
+      description: >-
+        GeoJSON des Orts (Punkt, Linie oder Fläche). Wird von der Karte automatisch ausgefüllt.
+        Von Hand reicht auch ein Punkt: {"type":"Point","coordinates":[6.6400,49.4450]} (erst Länge, dann Breite).
+      render: geojson
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: lizenz
+    attributes:
+      label: Lizenz und Datenschutz
+      options:
+        - label: Ich stelle Text und Fotos dieser Meldung unter [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.de), damit Presse, Verwaltung und andere sie frei nutzen können.
+          required: true
+        - label: Auf den Fotos sind keine erkennbaren Personen oder Kennzeichen, und ich habe sie selbst gemacht.
+          required: true

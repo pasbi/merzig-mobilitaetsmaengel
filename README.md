@@ -1,1 +1,47 @@
-# merzig-mobilitaetsmaengel
+# Mobilitätsmängel Merzig
+
+Eine gemeinsam gepflegte Sammlung von Mängeln an der Rad-, Fuß- und Verkehrsinfrastruktur in Merzig: Laternen mitten im Radweg, falsche oder fehlende Schilder, fehlende Querungen, schlechter Belag.
+
+Jeder Mangel ist ein [Issue](../../issues) mit einer Geometrie (Punkt, Linie oder Fläche).
+Alle Meldungen erscheinen auf der **[Karte](https://pasbi.github.io/merzig-mobilitaetsmaengel/)**.
+
+## Mangel melden
+
+1. Auf der [Karte](https://pasbi.github.io/merzig-mobilitaetsmaengel/) „Punkt“, „Linie“ oder „Fläche“ wählen und in die Karte klicken.
+2. „Meldung auf GitHub erstellen“ öffnet das Formular mit vorausgefüllter Geometrie und Adresse.
+3. Art, Schwere und Beschreibung ausfüllen, Fotos per Drag & Drop einfügen, absenden.
+
+Ohne Karte geht es auch direkt über [„Mangel melden“](../../issues/new/choose); die Geometrie dann als GeoJSON eintragen, z. B. `{"type":"Point","coordinates":[6.6385,49.4435]}` (erst Länge, dann Breite).
+
+## Lebenszyklus einer Meldung
+
+Der Zustand wird über `status:`-Labels geführt, jedes Issue trägt genau eines:
+
+| Label | Bedeutung |
+| --- | --- |
+| `status: gemeldet` | Neu eingegangen, noch nicht vor Ort geprüft (wird vom Formular gesetzt) |
+| `status: geprüft` | Von einer Person aus dem Team vor Ort bestätigt |
+| `status: weitergegeben` | An die zuständige Stelle weitergegeben (Datum, Empfänger und Kanal im Kommentar festhalten) |
+| `status: in-arbeit` | Die zuständige Stelle hat Maßnahmen angekündigt oder begonnen |
+| `status: behoben` | Erledigt, Issue wird geschlossen |
+| `status: abgelehnt` | Wird nicht weiterverfolgt (Begründung im Kommentar), Issue wird geschlossen |
+
+Weitere Label-Gruppen:
+
+- `art:` – Kategorie, bestimmt die Farbe auf der Karte (genau eines).
+- `schwere:` – niedrig, mittel, hoch (genau eines).
+- `zuständigkeit:` – Stadt, Landkreis, Land, Bund, privat oder unklar; bei geteilter Zuständigkeit mehrere setzen.
+- `duplikat` – bereits gemeldet, im Kommentar das ursprüngliche Issue verlinken und schließen.
+
+Beim Prüfen einer neuen Meldung bitte `art:` und `schwere:` passend zu den Angaben im Formular setzen und die Zuständigkeit eintragen, sobald sie bekannt ist.
+Die vollständige Liste steht in [`labels.json`](labels.json), technische Hinweise in [`EINRICHTUNG.md`](EINRICHTUNG.md).
+
+## Lizenz
+
+Code (Kartenseite, Vorlagen, Skripte): [MIT](LICENSE).
+
+Inhalte der Meldungen (Texte, Geometrien, Fotos): [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.de).
+Jede Person, die einen Mangel meldet, bestätigt dies im Formular.
+Presse, Verwaltung und alle anderen dürfen die Meldungen frei nutzen, mit Nennung von „Mobilitätsmängel Merzig“ und Link auf dieses Repository.
+
+Kartendaten: © [OpenStreetMap-Mitwirkende](https://www.openstreetmap.org/copyright), [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/).

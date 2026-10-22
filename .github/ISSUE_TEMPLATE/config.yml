@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Karte aller Mängel
+    url: https://pasbi.github.io/merzig-mobilitaetsmaengel/
+    about: Mängel auf der Karte ansehen oder direkt von der Karte aus melden.
