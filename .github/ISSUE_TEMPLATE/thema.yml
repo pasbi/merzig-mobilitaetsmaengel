@@ -1,0 +1,35 @@
+name: Thema (Sammel-Issue)
+description: Übergeordnetes Issue für mehrere zusammengehörige Meldungen, z. B. alle Einbahnstraßen. Die Einzelmeldungen werden als Sub-Issues zugeordnet.
+title: "Thema: "
+labels:
+  - "status: gemeldet"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ein Sammel-Issue bündelt die allgemeine Argumentation; die einzelnen Stellen sind eigene Meldungen über „Mangel melden“ und werden hier als Sub-Issues verknüpft.
+        Bitte zusätzlich ein passendes `thema:`-Label vergeben (ggf. vom Team anlegen lassen), damit die Karte danach filtern kann.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Worum geht es, warum betrifft es mehrere Stellen, wen behindert oder gefährdet es?
+    validations:
+      required: true
+
+  - type: textarea
+    id: loesung
+    attributes:
+      label: Lösungsvorschlag
+      description: Allgemeine Lösung samt Rechtsgrundlagen und Quellen. Die Sub-Issues verweisen hierauf und nennen nur noch die Besonderheiten der jeweiligen Stelle.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: lizenz
+    attributes:
+      label: Lizenz
+      options:
+        - label: Ich stelle den Text unter [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.de).
+          required: true
