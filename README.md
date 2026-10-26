@@ -20,7 +20,7 @@ Mehrere Stellen in einer Meldung sind einfach mehrere `Feature`-Einträge in der
 
 ## Lebenszyklus einer Meldung
 
-Der Zustand wird über `status:`-Labels geführt, jedes Issue trägt genau eines (setzt man ein zweites, entfernt eine Action automatisch das alte):
+Der Zustand wird über `status:`-Labels geführt, jede Meldung trägt genau eines (setzt man ein zweites, entfernt eine Action automatisch das alte); Themen-Issues haben keinen Status, den tragen ihre Sub-Issues:
 
 | Label | Bedeutung |
 | --- | --- |

@@ -1,8 +1,6 @@
 name: Thema (Sammel-Issue)
 description: Übergeordnetes Issue für mehrere zusammengehörige Meldungen, z. B. alle Einbahnstraßen. Die Einzelmeldungen werden als Sub-Issues zugeordnet.
 title: "Thema: "
-labels:
-  - "status: unbestätigt"
 body:
   - type: markdown
     attributes:

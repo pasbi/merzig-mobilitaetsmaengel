@@ -40,6 +40,7 @@ Das `README.md` richtet sich an Meldende und Mitwirkende; Technik und Betrieb ge
 - Labels: genau eines aus `schwere: …` und `status: …`; eines oder mehrere aus `art: …` (das erste bestimmt die Farbe auf der Karte, der Filter greift bei jeder Art); null bis mehrere aus `zuständigkeit: …` (Stadt, Landkreis, Land, Bund, privat, unklar; geteilte Zuständigkeit ist normal); optional `thema: …` für Bündel mehrerer Issues (die Karte baut daraus automatisch einen Filter, keine Pflege in `ARTEN` nötig); dazu `duplikat`.
   Bündel zusätzlich als Eltern-Issue mit Sub-Issues strukturieren; dafür gibt es die Vorlage `thema.yml` ohne Geometrie (erscheint auf der Karte nur in der Liste).
   Vollständige Liste und Bedeutung in `labels.json` und `README.md`.
+- Themen-Issues (Vorlage `thema.yml`, Sammel-Issue mit Sub-Issues) tragen keinen `status:` und keine `schwere:`; den Zustand haben die Sub-Issues.
 - Geschlossen wird ein Issue nur mit `status: behoben` oder `status: obsolet`.
   `status: abgelehnt` bleibt offen: der Mangel besteht in der echten Welt weiter.
 
