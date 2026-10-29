@@ -22,6 +22,7 @@ let issues = [];
 let datenStand = null;
 let labelFarben = {}; // Label-Name -> Hexfarbe ohne '#'
 let ladeWarnung = '';
+const layerVon = {}; // Issue-Nummer -> Leaflet-Layer der aktuell gezeichneten Issues
 
 // ---------- Darstellung ----------
 const aktiveArten = () => [...document.querySelectorAll('#artFilter input:checked')].map(i => i.value);
@@ -29,6 +30,7 @@ const statusFilter = () => document.querySelector('input[name=st]:checked').valu
 
 function zeichne() {
   issueLayer.clearLayers();
+  Object.keys(layerVon).forEach(k => delete layerVon[k]);
   const liste = $('liste');
   liste.innerHTML = '';
   const arten = aktiveArten();
@@ -74,7 +76,9 @@ function zeichne() {
       layer.bindPopup(popup(issue, artName));
       kontur.addTo(issueLayer);
       layer.addTo(issueLayer);
-      li.onclick = () => { if (istMobil()) panelSchliessen(); map.fitBounds(layer.getBounds().pad(0.5), { maxZoom: 18 }); layer.openPopup(); };
+      layerVon[issue.number] = layer;
+      layer.on('popupopen', () => history.replaceState(null, '', `#${issue.number}`));
+      li.onclick = () => fokus(issue.number);
     } else if (!geo) {
       li.title += ' · ohne Ort auf der Karte';
       li.onclick = () => toast(`#${issue.number} hat keinen Ort auf der Karte.`, issue.url);
@@ -170,12 +174,37 @@ async function start(force) {
     issues = d.issues; datenStand = d.stand; labelFarben = d.labelFarben; ladeWarnung = d.warnung;
     baueThemaFilter();
     zeichne();
-    if (issueLayer.getLayers().length && !location.hash) map.fitBounds(issueLayer.getBounds().pad(0.2), { maxZoom: 16 });
+    const nr = +(location.hash.match(/^#(\d+)$/) || [])[1];
+    if (nr) fokusAusLink(nr);
+    else if (issueLayer.getLayers().length) map.fitBounds(issueLayer.getBounds().pad(0.2), { maxZoom: 16 });
   } catch (e) {
     s.className = 'err';
     s.textContent = `Konnte Meldungen nicht laden (${e.message}). Bei "403" ist das API-Limit erreicht, bitte später nochmal.`;
   }
 }
+// Auf eine Meldung zoomen und ihr Popup öffnen
+function fokus(nr) {
+  const layer = layerVon[nr];
+  if (!layer) return false;
+  if (istMobil()) panelSchliessen();
+  map.fitBounds(layer.getBounds().pad(0.5), { maxZoom: 18 });
+  layer.openPopup();
+  return true;
+}
+
+// Deep-Link "#12": falls die Meldung vom Filter ausgeblendet ist (z. B. erledigt), Filter auf "alle" stellen
+function fokusAusLink(nr) {
+  if (fokus(nr)) return;
+  const issue = issues.find(i => i.number === nr);
+  if (!issue) { toast(`Meldung #${nr} gibt es nicht.`); return; }
+  document.querySelector('input[name=st][value=all]').checked = true;
+  document.querySelectorAll('#artFilter input').forEach(i => i.checked = true);
+  $('themaFilter').value = '';
+  zeichne();
+  if (!fokus(nr)) toast(`#${nr} hat keinen Ort auf der Karte.`, issue.url);
+}
+window.addEventListener('hashchange', () => { const nr = +(location.hash.match(/^#(\d+)$/) || [])[1]; if (nr) fokusAusLink(nr); });
+
 $('btnReload').onclick = e => { e.preventDefault(); e.stopPropagation(); start(true); };
 
 // ---------- Mobile Kopfleiste: Panel über der Karte ----------
