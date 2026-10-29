@@ -35,8 +35,9 @@ Das `README.md` richtet sich an Meldende und Mitwirkende; Technik und Betrieb ge
   Die Karte liest jede Form (nackte Geometrie, Feature, FeatureCollection, GeometryCollection), erzeugt selbst aber immer eine FeatureCollection aus einzelnen Features, weil GitHubs Vorschau im Issue nackte Geometrien nicht rendert.
   Mehrere Punkte als mehrere Point-Features, nicht als MultiPoint.
 - Formularfelder werden von GitHub als `### Feldname\n\nWert` gerendert; `karte/data.js` liest sie mit `feld(body, label)`.
-  Feldnamen im Formular nicht umbenennen, ohne den Parser anzupassen (er kennt für den Standort den alten Namen „Ort (Adresse oder Beschreibung)“ und den neuen „Standort“).
-- Formularfelder: Art, Schwere, Problem, Lösungsvorschlag (optional), Standort (Adresse, Bereich oder Liste mit einer Zeile je Stelle in der Reihenfolge der Geometrie-Punkte), Geometrie, Lizenz-Checkboxen.
+  Feldnamen im Formular nicht umbenennen, ohne den Parser anzupassen (er kennt noch die alten Standort-Felder „Standort“ und „Ort (Adresse oder Beschreibung)“ früherer Issues).
+- Formularfelder: Art, Schwere, Problem, Lösungsvorschlag (optional), Geometrie, Lizenz-Checkboxen.
+  Der Ort steht im Titel („Ort: Kurze Beschreibung“); bei mehreren Stellen gehört die Liste in den Problemtext.
 - Labels: genau eines aus `schwere: …` und `status: …`; eines oder mehrere aus `art: …` (das erste bestimmt die Farbe auf der Karte, der Filter greift bei jeder Art); null bis mehrere aus `zuständigkeit: …` (Stadt, Landkreis, Land, Bund, privat, unklar; geteilte Zuständigkeit ist normal); optional `thema: …` für Bündel mehrerer Issues (die Karte baut daraus automatisch einen Filter, keine Pflege in `ARTEN` nötig); dazu `duplikat`.
   Bündel zusätzlich als Eltern-Issue mit Sub-Issues strukturieren; dafür gibt es die Vorlage `thema.yml` ohne Geometrie (erscheint auf der Karte nur in der Liste).
   Vollständige Liste und Bedeutung in `labels.json` und `README.md`.

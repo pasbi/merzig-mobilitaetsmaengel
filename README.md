@@ -9,7 +9,7 @@ Alle Meldungen erscheinen auf der **[Karte](https://pasbi.github.io/merzig-mobil
 
 1. Auf der [Karte](https://pasbi.github.io/merzig-mobilitaetsmaengel/) „Punkt(e)“, „Linie“ oder „Fläche“ wählen und in die Karte klicken; bei „Punkt(e)“ fügt jeder weitere Klick eine weitere Stelle zur selben Meldung hinzu.
 2. „Meldung auf GitHub erstellen“ öffnet das Formular mit vorausgefüllter Geometrie; die Straße steht als Vorschlag im Titel.
-3. Titel anpassen, Art, Schwere, Problem, optional Lösungsvorschlag und Standort ausfüllen, Fotos per Drag & Drop ins Problem-Feld ziehen, absenden.
+3. Titel anpassen (Ort: kurze Beschreibung), Art, Schwere, Problem und optional Lösungsvorschlag ausfüllen, Fotos per Drag & Drop ins Problem-Feld ziehen, absenden.
 
 Gehört eine weitere Stelle zu einer bestehenden Meldung (z. B. dieselben zu engen Fahrradbügel an mehreren Orten), unter „Werkzeuge“ → „Koordinaten abgreifen“ die Stellen anklicken, das GeoJSON kopieren und die `Feature`-Einträge im Issue in die Liste unter „Geometrie“ einfügen (Issue öffnen → ··· → Edit).
 Daneben misst „Entfernung messen“ die Länge einer geklickten Strecke, etwa für Umwege oder Abschnittslängen in der Beschreibung.

@@ -1,6 +1,6 @@
 name: Mangel melden
 description: Einen Mangel an Rad-, Fuß- oder Verkehrsinfrastruktur in Merzig melden.
-title: "[Ort]: Kurze Beschreibung"
+title: "Ort: Kurze Beschreibung"
 labels:
   - "status: unbestätigt"
 body:
@@ -54,17 +54,6 @@ body:
       label: Lösungsvorschlag
       description: Optional. Was müsste passieren, damit der Mangel behoben ist? Gern auch Alternativen oder Verweise auf Richtlinien.
       placeholder: Mast an den Rand versetzen; übergangsweise die Engstelle markieren.
-
-  - type: textarea
-    id: ort
-    attributes:
-      label: Standort
-      description: Genaue Adresse, Bereich („Fußgängerzone“) oder Liste, bei mehreren Stellen eine Zeile je Standort in der Reihenfolge der Punkte in der Geometrie.
-      placeholder: |
-        Poststraße 12, vor der Bäckerei
-        Marktplatz, Südseite vor dem Brunnen
-    validations:
-      required: true
 
   - type: textarea
     id: geometrie

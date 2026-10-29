@@ -82,7 +82,8 @@ export function feld(body, label) {
   return m ? m[1].trim() : '';
 }
 
-// Neuer Feldname "Standort", alter "Ort (Adresse oder Beschreibung)" (Issues #1-#3)
+// Standort-Feld gab es nur in frühen Formular-Versionen ("Standort" bzw. "Ort (Adresse oder Beschreibung)");
+// seitdem steht der Ort im Titel. Wird nur noch angezeigt, wenn vorhanden.
 export function standortVon(issue) {
   return feld(issue.body, 'Standort') || feld(issue.body, 'Ort (Adresse oder Beschreibung)');
 }
