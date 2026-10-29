@@ -28,6 +28,7 @@
   { "name": "zuständigkeit: unklar",    "color": "d7ccc8", "description": "Noch nicht geklärt" },
 
   { "name": "thema: einbahnstraße", "color": "e1bee7", "description": "Einbahnstraße für Radverkehr in Gegenrichtung freigeben" },
+  { "name": "thema: abstellanlagen", "color": "e1bee7", "description": "Fahrradabstellanlagen: fehlend, zu wenig oder schlecht nutzbar" },
 
   { "name": "foto gesucht",    "color": "fff59d", "description": "Ein Foto vor Ort würde die Meldung stärken; nach dem Hochladen Label entfernen" },
   { "name": "messung gesucht", "color": "fff59d", "description": "Maß vor Ort nötig (Breite, Abstand); nach dem Eintragen Label entfernen" },
